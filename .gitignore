@@ -1,0 +1,107 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 가상환경
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# 로그 파일
+*.log
+logs/
+app.log
+nohup.out
+
+# 임시 파일 및 업로드
+temp/
+uploads/
+cache/
+*.tmp
+*.temp
+
+# 환경 변수 파일
+.env
+.envrc
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# 테스트 및 결과 파일
+tests/
+*_test.py
+saved_results/
+*.html
+
+# 백업 파일
+*.backup
+*_backup.py
+*_old.py
+*_broken.py
+*_copy.py
+*_copy_*.py
+*_new.py
+*_cleaned.py
+cloudbuild.yaml.backup.*
+
+# 성능 테스트 파일
+performance_*.py
+analyze_*.py
+detect_*.py
+pdf_to_txt_*.py
+gemini_limits_test.py
+
+# 정적 파일 (맵 파일은 제외)
+static/maps/*.html
+
+# 배포 관련 (선택사항 - 필요하면 주석 해제)
+# deploy.sh
+# setup_gcr.sh
+
+# ATSplanvalidation 가상환경 (이 폴더 내부)
+ATSplanvalidation/.venv/
+ATSplanvalidation/__pycache__/
+ATSplanvalidation/**/__pycache__/
+
+# Node modules (있다면)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 기타
+*.bak
+*.swp
+*~

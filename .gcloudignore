@@ -1,0 +1,99 @@
+# .gcloudignore
+# Git 관련
+.git
+.gitignore
+.gitattributes
+
+# Python 관련
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 가상환경
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# IDE 관련
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 로그 파일
+*.log
+logs/
+app.log
+nohup.out
+
+# 임시 파일
+temp/
+uploads/
+cache/
+*.tmp
+*.temp
+
+# 테스트 파일
+tests/
+*_test.py
+
+# 문서
+README.md
+*.md
+
+# 환경 설정
+.env
+.envrc
+.env.local
+.env.development
+.env.production
+
+# OS 관련
+.DS_Store
+Thumbs.db
+
+# 백업 파일
+*.backup
+*_backup.py
+*_old.py
+*_broken.py
+*_copy.py
+*_copy_*.py
+*_new.py
+*_cleaned.py
+
+# 성능 테스트 파일
+performance_*.py
+analyze_*.py
+detect_*.py
+pdf_to_txt_*.py
+gemini_limits_test.py
+
+# 정적 파일 (맵 파일은 제외)
+static/maps/*.html
+
+# 배포 스크립트
+deploy.sh
+setup_gcr.sh

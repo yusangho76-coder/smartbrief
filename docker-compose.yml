@@ -1,0 +1,8 @@
+services:
+  smartnotam:
+    image: asia-northeast3-docker.pkg.dev/smartnotam-475810/smartnotam-repo/smartnotam:20251026201256
+    container_name: smartnotam
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+

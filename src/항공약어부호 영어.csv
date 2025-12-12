@@ -1,0 +1,2157 @@
+Abb,Meaning
+APAPI,Abbreviated precision approach path indicator
+AT-VASIS,Abbreviated T visual approach slope indicator system
+ABM,Abeam
+ABT,About
+ABV,Above
+AAL,Above aerodrome level
+AGL,Above ground level
+AMSL,Above mean sea level
+MON,Above mountains
+ASDA,Accelerate-stop distance available
+ACPT,"Accept, accepted"
+ACP,Acceptance(message type designator)
+ACK,Acknowledge
+ACT,"Active, activated, activity"
+ATA,Actual time of arrival
+ATD,Actual time of departure
+ADDN,"Addition, additional"
+ADJ,Adjacent
+ABI,Advance boundary information
+ADZ,Advise
+AWTA,Advise at what time able
+ADA,Advisory area
+ADR,Advisory route
+ADVS,Advisory service
+AD,aerodrome
+ABN,Aerodrome beacon
+ADC,Aerodrome chart
+SNOCLO ,Aerodrome closed due to snow (used in METAR/SPECI)
+TWR,Aerodrome control tower or aerodrome control
+AFIS,Aerodrome flight information service
+TAF,Aerodrome forecast (in meteorological code)
+AOC,Aerodrome obstacle chart
+ADO,Aerodrome office
+PRFG,Aerodrome partially covered by fog
+ARP,Aerodrome reference point
+METAR,Aerodrome routine meteorological report(in meteorological code)
+SPECI,Aerodrome special meteorological report (in meteorological code)
+AGA,"Aerodromes, air routes and ground aids"
+ATZ,Aerodrome traffic zone
+ANC,Aeronautical chart-1:500 000
+AFS,Aeronautical fixed service
+AFTN,Aeronautical fixed telecommunication network
+AIC,Aeronautical information circular
+AIP,Aeronautical information publication
+AIRAC,Aeronautical information regulation and control
+AIS,Aeronautical information services
+MAP,Aeronautical maps and charts
+AMSS,Aeronautical mobile satellite service
+AMS,Aeronautical mobile service
+ANCS,Aeronautical navigation chart-small scale
+ATN,Aeronautical telecommunication network
+AFT,"After (time, palce)"
+APSG,After passing
+AGN,Again
+ACAS,Airborne collision avoidance system
+ACFT,Aircraft
+ACCID,"Aircraft accident, notification of"
+AAIM,Aircraft autonomous integrity monitoring
+ACN,Aircraft classification number
+ACARS,Aircraft communication addressing and reporting system
+AES,Aircraft earth station
+APDC ,Aircraft parking/docking chart
+ADIZ,Air defence identification zone
+AP,Airport
+AIREP,Air-report
+ARP,Air-report(message type designator)
+GAIN,Airspeed or headwind gain 
+LOSS,Airspeed or headwind loss
+A/A,Air-to-air
+A/G,Air-to-ground
+ATC,Air traffic control
+ATCSMAC,Air traffic control surveillance minimum altitude chart
+ATFM,Air traffic flow management
+ATM,Air traffic management
+ATS,Air traffic services
+AIDC,Air traffic services interfacility data communications
+ARO,Air traffic services reporting office
+AWY,Airway
+ALR,Alerting (message type designator)
+ALRS,Alerting service
+ALERFA,Alert phase
+ALA,Alighting area
+AUW,All up weight
+ALTN,"Alternate, alternating(light alternates in colour)"
+ALTN,Alternate(aerodrome)
+ACL,Altimeter check location
+QNH,Altimeter sub-scale setting to obtain elevation when on the ground
+ASE,Altimetry system error
+ALT,Altitude
+AC,Altocumulus
+AS,Altostratus
+A,Amber
+AMD,"Amend, amended(used to indicate amended meteorogical message; message type designator)"
+AAA,Amended  meteorological message
+AMDT,Amendment(AIP Amendment)
+ANS,Answer
+APCH,Approach
+APP,"Approach control office, approach control, approach control service"
+ALS,Approach lighting system
+APV,"Approve, approved, approval"
+APRX,"Approximate, approximately"
+APR,April
+APN,Apron
+ARC,Area chart
+ACC,"Area control centre, Area control"
+GAMET,Area forecast for low-level flights
+AMA,Area minimum altitude
+RNAV,Area navigation
+ARNG,Arrange
+ARST,Arresting(specify part of aircraft arresting equipment)
+ARR,"Arrive, arrival"
+ARR,Arrival(message type designator)
+ASC,"Ascend to, ascending to"
+ASPH ,Asphalt
+AAD,Assigned  altitude deviation
+SAP,As soon as possible 
+AT...,At(followed by time at which weather change is forecast to occur)
+ATP,At..(time or place)
+QFE,Atmospheric pressure at aerodrome elevation(or at runway threshold)
+XS,Atmospherics
+MAR,At sea
+MRP,ATS/MET reporting point
+ATTN,Attention
+COT,At the coast
+AUG,August
+AUTH,"Authorized, authorization"
+FISA,Automated flight information service
+ADS-B,Automatic dependent surveillance-broadcast
+ADS-C,Automatic dependent surveillance-contract
+ADSU,Automatic dependent surveillance unit
+ADF,Automatic direction-finding equipment
+ARQ,Automatic error correction
+ATIS,Automatic terminal information service
+AUX,Auxiliary
+AVBL,Available
+AVG,Average
+AVGAS,Aviation gasoline
+METAR,Aerodrome meteorological report(in meteorological code)
+SPECI,Aerodrome special meteorological report(in meteorological code)
+AZM,Azimuth
+BARO-VNAV,Barometric vertical navigation
+BCN,Beacon (aeronautical ground light)
+BRG,Bearing
+BECMG,Becoming
+BFR,Before
+BLW...,Below...
+BLO,Below clouds
+BTN,Between
+BTL,Between layers
+BUFR,Binary universal form for the representation of meteorological data
+BL...,"Blowing(followed by DU = dust, SA = sand or SN = snow)"
+B,Blue
+BOMB,Bombing
+BDRY,Boundary
+BRKG,Braking
+BA,Braking action
+BCST,Broadcast
+BS,Commercial broadcasting station
+BKN,Broken
+BLDG,Building
+VSA,By visual reference to the ground
+CLBR,Calibration
+CS,Call sign
+CLG,Calling
+CNL,Cancel or cancelled
+CD,Candela
+CAT,Category
+CTN,Caution
+C,"Celsius (Centigrade), Degrees "
+CM,Centimetre
+...C,Centre(preceded by runway designation number to identify a parallel runway)
+CL,Centre line
+CF,Change frequency to...
+COP,Change-over point
+CH,channel
+CK,Check
+CGL,Circling guidance light(s)
+CC,Cirrocumulus
+CS,Cirrostratus
+CI,Cirrus
+CIV,Civil
+CAT,Clear air turbulence
+CLR,Clear(s) or cleared to...or clearance
+CLA,Clear type of ice formation 
+CWY,Clearway
+CLIMB-OUT,Climb-out area 
+CMB,Climb to or climbing to
+CTAM,Climb to and maintain 
+CLSD,Close or closed or closing
+CLD,Cloud 
+BASE,Cloud base
+TOP,Cloud top
+CVR,Cockpit voice recorder
+CRM,Collision risk model
+CMPL,Completion or completed or complete
+CIDIN,Common ICAO data interchange network
+COM,Communications
+CNS,"Communications, navigation and surveillance"
+CONC,Concrete
+COND,Condition
+CFM,Confirm or I confirm (to be used in AFS as a procedure signal)
+RF,Constant radius arc to a fix
+CONST,Construction or constructed
+CTC,Contact
+CONT,Continue(s) or continued
+CONS,Continuous
+H24,Continuous day and night service
+CW,Continuous wave
+CTL,Control
+CTA,Control area
+OPC ,Control indicated is operational control
+CPDLC,Controller-pilot data link communications
+CTR,Control zone
+COOR,Coordinate or coordination
+UTC,Coordinated Universal Time
+Z,Coordinated Universal Time (in meteorological messages)
+COORD,Coordinates
+CDN,Coordination 
+COR,Correct or correction or corrected (used to indicate corrected meteorological message;message type designator)
+CCA,Corrected meteorological message
+FA,Course from a fix to an altitude
+FM,Course from a fix to manual termination (used in navigation database coding)
+CF,Course to a fix
+CA,Course to an altitude
+COV,Cover or covered or covering
+X,Cross
+XBAR,Crossbar (of approach lighting system)
+XNG,Crossing
+CRZ,Cruise
+CUF,Cumuliform
+CB,Cumulonimbus
+CU,Cumulus
+CPL,Current flight plan (message type designator)
+CUST,Customs
+CRC,Cyclic redundancy check
+DLY,Daily
+DNG,Danger or dangerous
+D...,Danger area(followed by identification)
+D-ATIS,Data link automatic terminal information service
+DLIC,Data link initiation capability
+D-VOLMET,Data link VOLMET
+DTG,Date-time group
+DCP,Datum crossing point
+DR,Dead reckoning
+DEC,December
+DA,Decision altitude
+DH,Decision height
+DEG,Degrees
+C,Degrees Celsius (Centigrade)
+DLA,Delay (message type designator)
+DLA,Delay or delayed
+RTD,Delayed (used to indicate delayed meteorological message; message type designator)
+RRA,Delayed meteorological message (message type designator)
+DUC,Dense upper cloud
+DEP,Depart or departure
+DEP,Departure (message type designator)
+DER,Departure end of the runway
+DEPO,Deposition
+DPT,Depth
+DES,Descend to or descending to
+DTAM,Descend to and maintain
+DEST,Destination
+DTRT,Deteriorate or deteriorating
+DEV,Deviation or deviating
+DP,Dew point temperature
+DIF,Diffuse
+DFDR,Digital flight data recorder
+DCT,Direct (in relation to flight plan clearances and type of approach)
+DCPC,Direct controller-pilot communications
+DF,Direction finding
+DTHR,Displaced runway threshold
+DIST,Distance
+DFTI,Distance from touchdown indicator
+DME,Distance measuring equipment
+DETRESFA,Distress phase
+DIV,Divert or diverting
+DCKG,Docking
+DOM,Domestic
+DVOR,Doppler VOR
+DCD,Double channel duplex
+DCS,Double channel simplex
+DSB,Double sideband
+D,Downward (tendency in RVR during previous 10 minutes)
+QDL,Do you intend to ask me for a series of bearings? or I intend to ask you for a series of bearings (to be used in radiotelegraphy as a Q Code)
+DZ,Drizzle
+DTW,Dual tandem wheels
+DW,Dual wheels
+DUR,Duration
+DRG,During 
+PO,Dust/sand whirls (dust devils)
+DS,Duststorm
+E,East or eastern longitude
+EB,Eastbound
+ENE,East-north-east
+ESE,East-south-east
+WEF,Effective from or with effect from
+WIE,Effective immediately or with immediate effect
+EFIS,Electronic flight instrument system
+ELEV,Elevation
+EDA,Elevation differential area
+EMBD,Embedded in a layer (to indicate cumulonimbus embedded in layers of other clouds)
+EMERG,Emergency
+ELBA,Emergency location beacon — aircraft
+ELT,Emergency locator transmitter
+EM,Emission
+ENG,Engine
+EVS,Enhanced vision system
+ENR,En route
+ENRC...,Enroute chart(followed by name/title)
+RSR,En-route surveillance radar
+EQPT,Equipment
+EEE,Error(to be used in AFS as a procedure signed)
+EST,Estimate or estimated or estimation (message type designator)
+EET,Estimated elapsed time
+EOBT,Estimated off-block time
+ETA,Estimated time of arrival or estimating arrival
+ETD,Estimated time of departure or estimating departure
+ETO,Estimated time over significant point
+EGNOS,European geostationary navigation overlay service
+EUR RODEX,European regional OPMET data exchange
+EV,Every
+EXC,Except
+EXER,Exercises or exercising or to exercise
+EXP,Expect or expected or expecting
+EFC,Expected further clearance
+EAT,Expected approach time
+EXTD,Extend or extending
+ELR,Extra long range
+EHF,Extremely high frequency [30 000 to 300 000 MHZ]
+FAL,Facilitation of international air transport
+FAC,Facilities
+FAX,Facsimile transmission
+FEB,February
+FT,Feet (dimensional unit)
+FPM,Feet per minute
+FEW,Few
+FTP,Fictitious threshold point
+FLD,Field
+FPL,Filed flight plan (message type designator)
+FNA,Final approach
+FATO,Final approach and take-off area
+FAF,Final approach fix
+FAP,Final approach point
+FAS,Final approach segment
+FRNG,Firing
+FST,First
+F,Fixed
+FLR,Flares
+FLG,Flashing
+FLT,Flight
+FLTCK,Flight check
+FDPS,Flight data processing system
+FIC,Flight information centre
+FIR,Flight information region
+FIS,Flight information service
+FL,Flight level
+FMC,Flight management computer
+FMS,Flight management system
+FPAP,Flight path alignment point
+PLN,Flight plan 
+CNL,Flight plan cancellation (message type designator)
+AFIL,Flight plan filed in the air
+FPR,Flight plan route
+FSS,Flight service station
+FTE,Flight technical error
+FTT,Flight technical tolerance
+FMU,Flow management unit
+FLUC,Fluctuating or fluctuation or fluctuated
+FLY,Fly or flying
+FG,Fog
+BCFG,Fog patches
+FLW,Follow(s) or following
+FCST,Forecast
+FZ,Freezing
+ZDZ,Freezing drizzle
+FZFG,Freezing fog
+FZRA,Freezing rain
+FREQ,Frequency
+FRQ,Frequent
+FCT ,Friction coefficient
+FRI,Friday
+FM,From
+FM... ,From(followed by time weather change is forecast to begin)
+DE,From (used to precede the call sign of the calling station) (to be used in AFS as a procedure signal)
+FRONT,Front (relating to weather)
+FROST,.Frost (used in aerodrome warnings)
+FR,Fuel remaining
+FSL,Full stop landing
+FC,Funnel cloud (tornado or water spout)
+GARP,GBAS azimuth reference point
+GLS,GBAS landing system
+GEN,General
+GEO,Geographic or true
+GUND,Geoid undulation
+GP,Glide path
+GPA,Glide path angle
+GPIP,Glide path intercept point
+GLD,Glider
+GNSS,Global navigation satellite system
+GLONASS,"(to be pronounced ""GLO-NAS"") Global orbiting navigation satellite system"
+GPS,Global positioning system
+GA,"Go ahead, resume sending (to be used in AFS as a procedure signal)"
+GAGAN,GPS and geostationary earth orbit augmented navigation 
+GRASS,Grass landing area
+GRVL,Gravel
+G,Green
+GND,Ground
+GBAS,"(to be pronounced ""GEE-BAS”) Ground-based augmentation system"
+GRAS,"(to be pronounced “""GRASS”"")Ground-based regional augmentation system"
+VSA,By visual reference to the ground
+GNDCK,Ground check
+GCA,Ground controlled approach system or ground controlled approach
+GES,Ground earth station
+GMC..., Ground movement chart (followed by name/title)
+GPWS,Ground proximity warning system
+GS,Ground speed
+G/A,Ground-to-air
+G/A/G,Ground-to-air and air-to-ground
+GR,Hail
+HBN,Hazard beacon
+HZ,Haze
+HDG,Heading
+VM,Heading to a manual termination
+VA,Heading to an altitude
+VI,Heading to an intercept
+HUD,Head-up display 
+HVY,Heavy
+HVY,"Heavy (used to indicate the intensity of weather phenomena, e.g. heavy rain = HVY RA)"
+HPA,Hectopascal
+HGT,Height or height above
+HEL,Helicopter
+HAPI,Helicopter approach path indicator
+ER,Here...or herewith
+HZ,Hertz (cycle per second)
+HVDF,High and very high frequency direction-finding stations (at the same location)
+HF,High frequency [3 000 to 30 000 kHz]
+HDF,High frequency direction-finding station
+H,High pressure area or the centre of high pressure
+HYR,Higher
+HLDG,Holding
+HF,Holding/racetrack to a fix
+HM,Holding/racetrack to a manual termination
+HA,Holding/racetrack to an altitude
+HOL,Holiday
+HOSP,Hospital aircraft
+HR,Hours
+HURCN,Hurricane
+NIL,None or I have nothing to send to you
+IC,"Ice crystals (very small ice crystals in suspension, also known as diamond dust)"
+IR,Ice on runway
+PL,Ice pellets
+ICE,Icing
+IDENT,Identification
+IBN,Identification beacon
+IFF,Identification friend/foe
+ID,Identifier or identify
+INP,If not possible
+IMT,Immediate or immediately
+IMG,Immigration
+IMPR,Improve or improving
+IAO,In and out of clouds
+INC,In cloud
+INBD,Inbound
+ISB,Independent sideband
+IAS,Indicated airspeed
+TX,Indicator for Maximum temperature (used in the TAF code form)
+INS,Inertial navigation system
+IRS,Inertial reference system
+INFO,Information
+SIGMET,Information concerning en-route weather phenomena which may affect the safety of aircraft operations
+AIRMET,Information concerning en-route weather phenomena which may affect the safety of low-level aircraft operations
+INA,Initial approach
+IAF,Initial approach fix
+LAN,Inland
+IM,Inner marker
+INOP,Inoperative
+INPR,In progress
+INSTL,Install or installed or installation
+INSTR,Instrument
+IAC...,Instrument approach chart(followed by name/title)
+IAP,Instrument approach procedure
+IFR,Instrument flight rules
+ILS,Instrument landing system
+IMC,Instrument meteorological conditions
+INTSF,Intensify or intensifying
+INTST,Intensity
+IF,Intermediate approach fix
+INTL,International
+IGA,International general aviation
+NOF,International NOTAM office
+ISA,International standard atmosphere
+SI,International system of units
+IMI,Interrogation sign (question mark) (to be used in AFS as a procedure signal)
+INTRG,Interrogator
+INTRP,Interrupt or interruption or interrupted
+INT,Intersection
+IAR,Intersection of air routes
+VAL,In valleys
+ISOL,Isolated
+JAN,January 
+JTST,Jet stream
+JUL,July
+JUN,June
+KG,Kilograms
+KHZ,Kilohertz
+KM,Kilometres
+KMH,Kilometres per hour
+KPA,Kilopascal
+KW,Kilowatts
+KT,Knots
+KIAS,Knots indicated airspeed
+LDG,Landing
+LDI,Landing direction indicator
+LDA,Landing distance available
+LDAH,"Landing distance available, helicopter"
+LTP,Landing threshold point
+LTT,Landline teletypewriter
+LNAV,Lateral navigation
+LAT,Latitude
+LYR,Layer or layered
+LVE,Leave or leaving
+...L,Left (preceded by runway designation number to identify a parallel runway)
+LEN,Length
+LVL,Level
+FBL,"Light (used to indicate the intensity of weather phenomena, interference or static reports, e.g. FBL RA = light rain)"
+LGT,Light or lighting
+LV,Light and variable (relating to wind)
+LIH,Light intensity high
+LIL,Light intensity low
+LIM,Light intensity medium
+LGTD,Lighted
+LTD,Limited
+LINE,Line (used in SIGMET)
+LCA,Local or locally or location or located
+LMT,Local mean time
+MET REPORT,Local routine meteorological report (in abbreviated plain language)
+SPECIAL,Local special meteorological report(in abbreviated plain language)
+LOC,Localizer
+LPV,Localizer performance with vertical guidance
+L,Locator
+LM,"Locator, middle"
+LO,"Locator, outer"
+LAM,Logical acknowledgement (message type designator)
+LNG,Long (used to indicate the type of approach desired or required)
+LONG,Longitude
+LRG,Long range
+LORAN,LORAN (long range air navigation system)
+DR...,"Low drifting(followed by DU = dust, SA = sand or SN = snow)"
+LF,Low frequency [30 to 300 kHz]
+L,Low pressure area or the centre of low pressure
+LVP,Low visibility procedures
+M...,Mach number(followed by figures)
+MAG,Magnetic
+QDR,Magnetic bearing
+QDM,Magnetic heading (zero wind)
+QFU,Magnetic orientation of runway
+VAR,Magnetic variation
+MNTN,Maintain
+MAINT,Maintenance
+MAS ,Manual Al simplex
+MAR,March
+MKR,Marker radio beacon
+MAX,Maximum
+MAA,Maximum authorized altitude
+TX . . .,Maximum temperature (followed by figures in TAF)
+P...,Maximum value of wind speed or runway visual range(followed by figures in METAR/SPECI and TAF)
+MAY,May
+MSL,Mean sea level
+MHDF,Medium and high frequency direction-finding stations (at the same location)
+MF,Medium frequency [300 to 3 000 kHz]
+MDF,Medium frequency direction-finding station
+MHVDF,"Medium, high and very high frequency direction-finding stations (at the same location)"
+MRG,Medium range
+MHZ,Megahertz
+MSG,Message
+MSR,Message...(transmission identification) has been misrouted (to be used in AFS as a procedure signal)
+MET,Meteorological or meteorology
+VOLMET,Meteorological information for aircraft in flight
+MWO,Meteorological watch office
+...M,Metres (preceded by figures)
+MPS,Metres per second
+MTU,Metric units
+MBST,Microburst
+MLS,Microwave landing system
+MM,Middle marker
+MID,Mid-point (related to RVR)
+MIL,Military
+MOA,Military operating area
+MNM,Minimum
+MCA,Minimum crossing altitude
+MDA,Minimum descent altitude
+MDH,Minimum descent height
+MEA,Minimum en-route altitude
+MEHT,Minimum eye height over threshold（for visual　approach slope indicator systems)
+MNPS,Minimum navigation performance specifications
+MOC,Minimum obstacle clearance (required)
+MOCA,Minimum obstacle clearance altitude
+MOPS,Minimum operational performance standards
+MRA,Minimum reception altitude
+MSAW,Minimum safe altitude warning
+MSA,Minimum sector altitude
+TN...,Minimum temperature(followed by figures in TAF)
+M...,Minimum value of runway visual range(followed by figures in METAR/SPECI)
+MS,Minus
+MIN,Minutes
+MAHF,Missed approach holding fix
+MAPT,Missed approach point
+MATF,Missed approach turning fix
+MIS,Missing...(transmission identification) (to be used in AFS as a procedure signal)
+BR,Mist
+MX,Mixed type of ice formation (white and clear)
+MOD,"Moderate (used to indicate the intensity of weather phenomena, interference or static reports, e.g. MODRA = moderate rain)"
+CHG,Modification (message type designator)
+MCW,Modulated continuous wave
+MON,Monday
+MNT,Monitor or monitoring or monitored
+MSSR,Monopulse secondary surveillance radar
+MT,Mountain
+MTW,Mountain waves
+MOV,Move or moving or movement
+MSAS,Multifunctional transport satellite (MTSAT) satellite-based augmentation system
+NTL,National
+NASC,National AIS system centre
+NM,Nautical miles
+NAV,Navigation
+NSE,Navigation system error
+CIT,Near or over large towns
+NXT,Next
+NGT,Night
+NSC,Nil significant cloud
+NSW,Nil significant weather
+NS,Nimbostratus
+NEG,No or negative or permission not granted or that is not correct
+NC,No change
+NCD,No cloud detected (used in automated METAR/SPECI)
+NDV,No directional variations available (used in automated METAR/SPECI)
+N,No distinct tendency (in RVR during previous 10 minutes)
+NO,No (negative) (to be used in AFS as a procedure signal)
+NN,"No name, unnamed"
+NRH,No reply heard
+NOSIG,No significant change (used in trend-type landing forecasts)
+HX,No specific working hours
+NTZ,No transgression zone
+NADP,Noise abatement departure procedure
+NDB,Non-directional radio beacon
+NPA,Non-precision approach
+NIL,None or I have nothing to send to you.
+NML,Normal
+NOZ,Normal operating zone
+N,North or northern latitude
+NAT,North Atlantic
+NB,Northbound
+NE,North-east
+NEB,North-eastbound
+NNE,North-north-east
+NNW,North-north-west
+NW,North-west
+NWB,North-westbound
+NBFR,Not before
+NOTAM,"A notice distributed by means of telecommunication containing information concerning the establishment, condition or change in any aeronautical facility, service, procedure or hazard, the timely knowledge of which is essential to  personnel concerned with flight operations"
+ACCID,Notification of an aircraft accident
+NOV,November
+NR,Number
+OBSC,Obscure or obscured or obscuring
+OBS,Observe or observed or observation
+OBST,Obstacle
+OAS,Obstacle assessment surface
+OCA,Obstacle clearance altitude
+OCH,Obstacle clearance height
+OCS,Obstacle clearance surface
+OFZ,Obstacle free zone .
+OIS,Obstacle identification surface
+OCNL,Occasional or occasionally
+OCC,Occulting (light)
+OSV,Ocean station vessel
+OAC,Oceanic area control centre
+OCA,Oceanic control area
+OCT,October
+OLDI,On-line data interchange
+O/R,On request
+OTP,On top
+OPA,"Opaque, white type of ice formation"
+OPN,Open or opening or opened
+OPS,Operations
+OPR,Operator or operate or operative or operating or operational
+OPC ,Operational control is the control indicated 
+OPMET,Operational meteorological (information)
+ORD,Order
+OTS,Organized track system
+OGN,Originate (to be used in AFS as a procedure signal)
+OUBD,Outbound
+OM,Outer marker
+OVC,Overcast
+OHD,Overhead
+PJE,Parachute jumping exercise
+PARL,Parallel
+PRKG,Parking
+PAX,Passenger(s)
+PSG,Passing
+PCN,Pavement classification number
+PER,Performance
+PBN,Performance-based navigation
+PERM,Permanent
+POB,Persons on board
+PSP,Pierced steel plank
+PCL,Pilot-controlled lighting
+PPI,Plan position indicator
+PS,Plus
+PRP,Point-in-space reference point
+PNR,Point of no return
+PTS,Polar track structure
+PSN,Position
+POSS,Possible
+PWR,Power
+PLA,Practice low approach
+PA,Precision approach
+PALS,Precision approach lighting system (specify category)
+PAPI,Precision approach path indicator
+PAR,Precision approach radar
+PATC...,Precision approach terrain chart(followed by name/title)
+PDC,Pre-departure clearance
+PIB,Pre-flight information bulletin
+PLVL,Present level
+PPSN,Present position
+PSYS,Pressure system(s)
+PRI,Primary
+PSR,Primary surveillance radar
+PN,Prior notice required
+PPR,Prior permission required
+PROB,Probability
+PROC,Procedure
+PDG,Procedure design gradient
+PTN,Procedure turn
+PANS,Procedures for air navigation services
+PCD,Proceed or proceeding
+GRID,Processed meteorological data in the form of grid point values expressed in binary form(meteorological code)
+P...,Prohibited area(followed by identifcation)
+PROV,Provisional
+QUAD,Quadrant
+RPI,Radar position indicator
+RPS,Radar position symbol
+RDL,Radial
+RDO,Radio
+RNG,Radio range
+RCF,Radiocommunication failure (message type designator)
+RTG,Radiotelegraph
+RTF,Radiotelephone
+RTT,Radioteletypewriter
+RAG,Ragged
+RA,Rain
+RG,Range (lights)
+ROC,Rate of climb
+ROD,Rate of descent
+R,Rate of turn
+RCH,Reach or reaching
+RCA,Reach cruising altitude
+REC,Receive or receiver
+R,Received (acknowledgement of receipt) (to be used in AFS as a procedure signal)
+RAIM,Receiver autonomous integrity monitoring
+RON,Receiving only
+RE,"Recent (used to qualify weather phenomena, e.g. RERA = recent rain)"
+RIF,Reclearance in flight
+RCLR,Recleared
+R,Red
+RVSM,Reduced vertical separation minimum (300 m(1 000 ft)) between FL 290 and FL 410
+RDH,Reference datum height
+RPDS,Reference path data selector
+REF,Reference to. . . or refer to. . .
+RASC,Regional AIS system centre
+ROBEX,Regional OPMET bulletin exchange (scheme)
+SUPPS,Regional supplementary procedures
+REG,Registration
+RTODAH,"Rejected take-off distance available, helicopter"
+RLA,Relay to
+RMK,Remark
+RASS,Remote altimeter setting source
+RPT,Repeat or I repeat (to be used in AFS as a procedure signal)
+RPL,Repetitive flight plan
+RPLC,Replace or replaced
+REP,Report or reporting or reporting point
+RL,Report leaving
+RR,Report reaching 
+REQ,Request or requested
+RQ,Request (to be used in AFS as a procedure signal)
+RQP,Request flight plan (message type designator)
+RLCE,Request level change en route
+RQS,Request supplementary flight plan (message tvpe designator)
+RLNA,Request level not available
+RCP,Required communication performance
+RNP,Required navigation performance
+RQMNTS,Requirements
+RERTE,Re-route
+RB,Rescue boat
+RCC,Rescue coordination centre
+RSC,Rescue sub-centre
+RV,Rescue vessel
+RA,Resolution advisory
+RSP,Responder beacon
+R...,Restricted area(followed by identification)
+RTN,Return or returned or returning
+RTS,Return to service
+RITE,Right (direction of turn)
+...R,Right (preceded by runway designation number to identifi a parallel runway)
+RHC,Right-hand circuit
+RIME,Rime (used in aerodrome warnings)
+RSS,Root sum square
+RTE,Route
+RAC,Rules of the air and air traffic services
+RWY,Runway
+R...,Runway(followed by figures in rn METAR/SPECI)
+RAI,Runway alignment indicator
+RAG,Runway arresting gear
+RCL,Runway centre line
+RCLL,Runway centre line light(s)
+CLRD,Runway(s) cleared (used in METAR/SPECI) 
+VAN,Runway control van
+REDL,Runway edge light(s)
+RENL,Runway end light(s)
+RESA,Runway end safety area
+RLLS,Runway lead-in lighting system
+RSCD,Runway surface condition
+RTHL,Runway threshold light(s)
+RTZL,Runway touchdown zone light(s)
+RVR,Runway visual range
+SA,Sand
+SS,Sandstorm
+SAN,Sanitary
+SPOC,SAR point of contact
+SBAS,Satellite-based augmentation system
+SATCOM,Satellite communication
+SAT,Saturday
+SCT,Scattered
+SKED,Schedule or scheduled
+SEA,Sea (used in connection with sea-surface temperature and state of the sea)
+W...,Sea-surface temperature(followed by figures in METAR/SPECI)
+SAR,Search and rescue
+SRR,Search and rescue region
+SRY,Secondary
+SSR,Secondary surveillance radar
+SEC,Seconds
+SECN,Section
+SECT,Sector
+SELCAL,Selective calling system
+SIF,Selective identification feature
+SEP,September
+SER,Service or servicing or served
+HS,Service available during hours of scheduled operations
+HO,Service available to meet operational requirements
+SVC,Service message
+SVCBL,Serviceable
+SEV,Severe (used e.g. to qualify icing and turbulence reports)
+QTA,Shall I cancel telegram number...? or Cancel telegram number... (to be used in AFS as a Q Code)
+QJH,Shall I run my test tape/a test sentence? or Run your test tape/a test sentence (to be used in AFS as a Q Code).
+MIFG,Shallow fog
+BRF,Short (used to indicate the type of approach desired or required)
+SRG,Short range
+STOL,Short take-off and landing
+SH...,"Shower(followed by RA = rain, SN = snow, PL = icepellets, GR = hail, GS = small hail and/or snow pellets or combinations thereof; e.g. SHRASN = showers of rain and snow)"
+SGL,Signal
+SIG ,Significant
+SALS,Simple approach lighting system
+SIMUL ,Simultaneous or simultaneously
+SIWL,Single isolated wheel load
+SSB,Single sideband
+SLW,Slow
+GS,Small hail and/or snow pellets
+FU,Smoke
+SN,Snow
+SG,Snow grains
+S,South or southern latitude
+SB,Southbound
+SE,South-east
+SEB,South-eastbound
+SSE,South-south-east
+SSW,South-south-west
+SW,South-west
+SWB,South-westbound
+ARS,Special air-report(message type designator)
+SPI,Special position indicator
+ASHTAM,"Special series NOTAM notifying, by means of a specific format, change in activity of a volcano, a volanic eruption and/or volcanic ash cloud that is of significance to aircraft operations"
+SNOWTAM,"Special series NOTAM notifying the presence or removal of hazardous  conditions due to snow, ice, slush or standing water associated with snow, slush and ice on the movement area, by means of a specific format"
+SLP,Speed limiting point
+SPOT,Spot wind
+SQ,Squall
+SQL,Squall line
+SDBY,Stand by
+STD,Standard
+SD,Standard deviation
+STAR,Standard instrument arrival
+SID,Standard instrument departure
+RUT,Standard regional route transmitting frequencies
+SARPS,Standards and Recommended Practices[ICAO]
+SOC,Start of climb
+S...,State of the sea(followed by figures in METAR/SPECI)
+STN,Station
+STNR,Stationary
+STS,Status
+SDF,Step down fix
+END,Stop-end (related to RVR)
+SWY,Stopway
+STWL,Stopway light(s)
+STA,Straight-in approach
+STF,Stratiform
+SC,Stratocumulus
+ST,Stratus
+SUBJ,Subject to
+SUN,Sunday
+SR,Sunrise
+HJ,Sunrise to sunset
+SS,Sunset
+HN,Sunset to sunrise
+SHF,Super high frequency [3 000 to 30 000 MHz]
+SST,Supersonic transport
+SUP,Supplement (AIP Supplement)
+SPL,Supplementary flight plan (message type designator)
+SFC,Surface
+SMC ,Surface movement control
+SMR,Surface movement radar
+SRA,Surveillance radar approach
+SRE,Surveillance radar element of precision approach radar system
+TAIL,Tail wind
+TKOF,Take-off
+TODA,Take-off distance available
+TODAH,"Take-off distance available, helicopter"
+TORA,Take-off run available
+TAX,Taxiing or taxi
+TGS,Taxiing guidance system
+TWY,Taxiway
+TWYL,Taxiway-link
+TECR,Technical reason
+TEL,Telephone
+TT,Teletypewriter
+T,Temperature
+TEMPO,Temporary or temporarily
+TRA,Temporary reserved airspace
+TAR,Terminal area surveillance radar
+TAA,Terminal arrival altitude
+TMA,Terminal control area
+TVOR,Terminal VOR
+TXT,"Text (when the abbreviation is used to request a repetition, the question mark(IM) precedes the abbreviation, e.g. IMITXT) (to be used in AFS as a procedure signal)"
+ADS,Automatic dependent surveillance
+LR,The last message received by me was...(to be used in AFS as a procedure signal)
+LS,The last message sent by me was... or Last message was... (to be used in AFS as a procedure signal)
+CH,This is a channel-continuity-check of transmission to permit comparison of your record of channel-sequence numbers of messages received on the channel (to be used in AFS as a procedure signal)
+DUPE,This is a duplicate message (to be used in AFS as a procedure signal)
+THR,Threshold
+TCH,Threshold crossing height
+THRU,Through
+TS,"Thunderstorm (in aerodrome reports and forecasts, TS used alone means  thunder heard but no precipitation at the aerodrome)"
+TS...,"Thunderstorm(followed by RA = rain, SN = snow: PL = icepellets, GR = hail, GS = small hail and/or snow pellets or combinations thereof; e.g. TSRASN = thunderstorm with rain and snow)"
+THU,Thursday
+TL...,Till(followed by time by which weather change is forecast to end)
+TO...,To... (place)
+TOC,Top of climb
+TDO,Tornado
+TGL,Touch-and-go landing
+TLOF,Touchdown and lift-off area
+TDZ,Touchdown zone
+TCU,Towering cumulus
+TOX,Toxic 
+TR,Track
+TF,Track to fix
+TFC,Traffic
+TA,Traffic advisory
+TCAS RA,Traffic alert and collision avoidance system resolution advisory
+TIBA,Traffic information broadcast by aircraft
+TA,Transition altitude
+TRL,Transition level
+TRANS,Transmits or transmitter
+TREND,Trend forecast
+TC,Tropical cyclone
+TCAC,Tropical cyclone advisory centre
+TROP,Tropopause
+...T,True (preceded by a bearing to indicate reference to True North)
+TAS,True airspeed
+QTE,True bearing
+TSUNAMI,Tsunami (used in aerodrome warnings)
+TUE,Tuesday
+TURB,Turbulence
+TNA,Turn altitude
+TA/H,Turn at an altitude/height
+TNH,Turn height
+TP,Turning point
+T-VASIS,T visual approach slope indicator system
+TYP,Type of aircraft
+TYPH,Typhoon
+TACAN,UHF tactical air navigation aid
+UHF,Ultra high frequency [300 to 3 000 MHz]
+UDF,Ultra high frequency direction-finding station
+ULR,Ultra long range
+UNA,Unable
+UHDT,Unable higher due traffic
+UNAP,Unable to approve
+INCERFA,Uncertainty phase
+UP,Unidentified precipitation (used in automated METAR/SPEC)
+UNL,Unlimited
+UA,Unmanned aircraft 
+UAS,Unmanned aircraft system
+UNREL,Unreliable
+U/S,Unserviceable
+TIL,Until
+UAB... ,Until advised by...
+UFN,Until further notice
+TIP,Until past...(place)
+UAR,Upper air route
+UAC ,Upper area control centre
+UTA,Upper control area
+UIR,Upper flight information region
+UIC,Upper information centre
+U,Upward (tendency in RVR during previous I0 minutes)
+VRB,Variable
+...V...,"Variations from the mean wind direction(preceded and followed by figures in METAR/SPECI, e.g. 350V070)"
+G...,Variations from the mean wind speed(gusts) (followed by figures in ETAR/SPECI and TAF)
+VTF,Vector to final
+VER,Vertical
+VNAV,Vertical navigation
+VPA,Vertical path angle
+VSP,Vertical speed
+VTOL,Vertical take-off and landing
+VV...,Vertical visibility(followed by figures in METAR/SPECI and TAF)
+VHF,Very high frequency [30 to 300 MHz]
+VDF,Very high frequency direction-finding station
+VIP,Very important person
+VLR,Very long range
+VLF,Very low frequency [3 to 30 kHz]
+VOR,VHF omnidirectional radio range
+VCY,Vicinity
+VC...,"Vicinity of the aerodrome (followed by, FG =fog, FC =funnel cloud, SH = shower, PO = dust/sand whirls, BLDU = blowing dust, BLSA = blowing sand, BLSN = blowing snow, DS = duststorm, SS = sandstorm, TS = thunderstorm or VA =  volcanic ash,e.g. VCFG = vicinity fog)"
+VIS,Visibility
+CAVOK,"Visibility, cloud and present weather better than prescribed values or conditions"
+VAC..,Visual approach chart(followed by name/title)
+VASIS,Visual approach slope indicator systems 
+VAR,Visual-aural radio range
+VFR,Visual flight rules
+VPT,Visual manoeuvre with prescribed track
+VMC,Visual meteorological conditions
+VSA,"Visual reference to the ground, By "
+VA,Volcanic ash
+VAAC,Volcanic ash advisory centre
+VOT,VOR airborne equipment test facility
+VORTAC,VOR and TACAN combination
+WRNG,Warning
+WTSPT,Waterspout
+WPT,Way-point
+OK,We agree or It is correct (to be used in AFS as a procedure signal)
+WKN,Weaken or weakening
+WX,Weather
+WED,Wednesday
+WT,Weight
+W,West or western longitude
+WB,Westbound
+WNW,West-north-west
+WSW,West-south-west
+QGE,What is my distance to your station? or Your distance to my station is(distance figures and units) (to be used in radiotelegraphy as a Q Code)
+W,White
+OPA,"White type of ice formation, Opaque "
+WAAS,Wide area augmentation system
+WDSPR,Widespread
+WID,Width or wide
+WILCO,Will comply
+QTF,"Will you give me the position of my station according to the bearings taken by the D/F stations which you control? or The position of your station according to the bearings taken by the D/F stations that I control was... latitude... longitude (or other indication of position), class... at... hours (to be used in radiotelegraphy as a Q Code)"
+QUJ,Will you indicate the TRUE track to reach you? or The TRUE track to reach me is... degrees at... hours (to be used in radiotelegraphy as a Q Code)
+QSP,Will you relay to... . free of charge? or I will relay to'... free of charge (to be used in AFS as a Q Code)
+WIND,Wind
+WDI,Wind direction indicator
+WS,Wind shear
+WSPD,Wind speed
+WBAR,Wing bar lights
+WEF,With effect from or effective from
+WIE,With immediate effect or effective immediately
+WI ,Within
+WO,ithout
+WIP,Work in progress
+WAC...,World Aeronautical Chart - ICAO  1 : 1 000 000(followed by narne/title)
+WAFC,World area forecast centre
+WGS-84,World Geodetic System - 1984
+WWW,Worldwide web
+Y,Yellow
+YCZ,Yellow caution zone (runway lighting;)
+AFM,"Yes, affirm, affirmative, that is correct"
+YES,Yes (affirmative) (to be used in AFS as a procedure signal)
+YR,Your
+A,Amber
+AAA,Amended meteorological message
+A/A,Air-to-air
+AAD,Assigned altitude deviation
+AAIM,Aircraft autonomous integrity monitoring
+AAL,Above aerodrome level
+ABI,Advance boundary information
+ABM,Abeam
+ABN,Aerodrome beacon
+ABT,About
+ABV,Above
+AC,Altocumulus
+ACARS,Aircraft communication addressing and reporting system
+ACAS,Airborne collision avoidance system
+ACC,"Area control centre, Area control"
+ACCID,Notification of an aircraft accident
+ACFT,Aircraft
+ACK,Acknowledge
+ACL,Altimeter check location
+ACN,Aircraft classification number
+ACP,Acceptance(message type designator)
+ACPT,"Accept, accepted"
+ACT,"Active, activated, activity"
+AD,aerodrome
+ADA,Advisory area
+ADC,Aerodrome chart
+ADDN,"Addition, additional"
+ADF,Automatic direction-finding equipment
+ADIZ,Air defence identification zone
+ADJ,Adjacent
+ADO,Aerodrome office
+ADR,Advisory route
+ADS,Automatic dependent surveillance
+ADS-B,Automatic dependent surveillance-broadcast
+ADS-C,Automatic dependent surveillance-contract
+ADSU,Automatic dependent surveillance unit
+ADVS,Advisory service
+ADZ,Advise
+AES,Aircraft earth station
+AFIL,Flight plan filed in the air
+AFIS,Aerodrome flight information service
+AFM,"Yes, affirm, affirmative, that is correct"
+AFS,Aeronautical fixed service
+AFT,"After (time, palce)"
+AFTN,Aeronautical fixed telecommunication network
+A/G,Air-to-ground
+AGA,"Aerodromes, air routes and ground aids"
+AGL,Above ground level
+AGN,Again
+AIC,Aeronautical information circular
+AIDC,Air traffic services interfacility data communications
+AIP,Aeronautical information publication
+AIRAC,Aeronautical information regulation and control
+AIREP,Air-report
+AIRMET,Information concerning en-route weather phenomena which may affect the safety of low-level aircraft operations
+AIS,Aeronautical information services
+ALA,Alighting area
+ALERFA,Alert phase
+ALR,Alerting (message type designator)
+ALRS,Alerting service
+ALS,Approach lighting system
+ALT,Altitude
+ALTN,"Alternate, alternating(light alternates in colour)"
+ALTN,Alternate(aerodrome)
+AMA,Area minimum altitude
+AMD,"Amend, amended(used to indicate amended meteorogical message; message type designator)"
+AMDT,Amendment(AIP Amendment)
+AMS,Aeronautical mobile service
+AMSL,Above mean sea level
+AMSS,Aeronautical mobile satellite service
+ANC,Aeronautical chart-1:500 000
+ANCS,Aeronautical navigation chart-small scale
+ANS,Answer
+AOC,Aerodrome obstacle chart
+AP,Airport
+APAPI,Abbreviated precision approach path indicator
+APCH,Approach
+APDC,Aircraft parking/docking chart
+APN,Apron
+APP,"Approach control office, approach control, approach control service"
+APR,April
+APRX,"Approximate, approximately"
+APSG,After passing
+APV,"Approve, approved, approval"
+ARC,Area chart
+ARNG,Arrange
+ARO,Air traffic services reporting office
+ARP,Aerodrome reference point
+ARP,Air-report(message type designator)
+ARQ,Automatic error correction
+ARR,Arrival(message type designator)
+ARR,"Arrive, arrival"
+ARS,Special air-report(message type designator)
+ARST,Arresting(specify part of aircraft arresting equipment)
+AS,Altostratus
+ASC,"Ascend to, ascending to"
+ASDA,Accelerate-stop distance available
+ASE,Altimetry system error
+ASHTAM,"Special series NOTAM notifying, by means of a specific format, change in activity of a volcano, a volanic eruption and/or volcanic ash cloud that is of significance to aircraft operations"
+ASPH,Asphalt
+AT...,At(followed by time at which weather change is forecast to occur)
+ATA,Actual time of arrival
+ATC,Air traffic control
+ATCSMAC,Air traffic control surveillance minimum altitude chart
+ATD,Actual time of departure
+ATFM,Air traffic flow management
+ATIS,Automatic terminal information service
+ATM,Air traffic management
+ATN,Aeronautical telecommunication network
+ATP,At..(time or place)
+ATS,Air traffic services
+ATTN,Attention
+AT-VASIS,Abbreviated T visual approach slope indicator system
+ATZ,Aerodrome traffic zone
+AUG,August
+AUTH,"Authorized, authorization"
+AUW,All up weight
+AUX,Auxiliary
+AVBL,"Available, availability"
+AVG,Average
+AVGAS,Aviation gasoline
+AWTA,Advise at what time able
+AWY,Airway
+AZM,Azimuth
+B,Blue
+BA,Braking action
+BARO-VNAV,Barometric vertical navigation
+BASE,Cloud base
+BCFG,Fog patches
+BCN,Beacon (aeronautical ground light)
+BCST,Broadcast
+BDRY,Boundary
+BECMG,Becoming
+BFR,Before
+BKN,Broken
+BL...,"Blowing(followed by DU = dust, SA = sand or SN = snow)"
+BLDG,Building
+BLO,Below clouds
+BLW...,Below...
+BOMB,Bombing
+BR,Mist
+BRF,Short (used to indicate the type of approach desired or required)
+BRG,Bearing
+BRKG,Braking
+BS,Commercial broadcasting station
+BTL,Between layers
+BTN,Between
+BUFR,Binary universal form for the representation of meteorological data
+...C,Centre(preceded by runway designation number to identify a parallel runway)
+C,Degrees Celsius (Centigrade)
+CA,Course to an altitude
+CAT,Category
+CAT,Clear air turbulence
+CAVOK,"(to be pronounced ""KAV-OH-KAY"") Visibility, cloud and present weather better than prescribed values or conditions"
+CB,"(to be pronounced ""CEE-BEE"") Cumulonimbus"
+CC,Cirrocumulus
+CCA,"(or CCB, CCC ... etc. in sequence) Corrected meteorological message (message type designator)"
+CD,Candela
+CDN,Coordination 
+CF,Change frequency to...
+CF,Course to a fix
+CFM*,Confirm or I confirm (to be used in AFS as a procedure signal)
+CGL,Circling guidance light(s)
+CH,channel
+CH#,This is a channel-continuity-check of transmission to permit comparison of your record of channel-sequence numbers of messages received on the channel (to be used in AFS as a procedure signal)
+CHEM,Chemical
+CHG,Modification (message type designator)
+CI,Cirrus
+CIDIN,Common ICAO data interchange network
+CIT,Near or over large towns
+CIV,Civil
+CK,Check
+CL,Centre line
+CLA,Clear type of ice formation
+CLBR,Calibration
+CLD,Cloud
+CLG,Calling
+CLIMB-OUT,Climb-out area
+CLR,Clear(s) or cleared to...or clearance
+CLRD,Runway(s) cleared (used in METAR/SPECI)
+CLSD,Close or closed or closing
+CM,Centimetre
+CMB,Climb to or climbing to
+CMPL,Completion or completed or complete
+CNL,Cancel or cancelled
+CNL,Flight plan cancellation (message type designator)
+CNS,"Communications, navigation and surveillance"
+COM,Communications
+CONC,Concrete
+COND,Condition
+CONS,Continuous
+CONST,Construction or constructed
+CONT,Continue(s) or continued
+COOR,Coordinate or coordination
+COORD,Coordinates
+COP,Change-over point
+COR,Correct or correction or corrected (used to indicate corrected meteorological message ; message type designator)
+COT,At the coast
+COV,Cover or covered or covering
+CPDLC,Controller-pilot data link communications
+CPL,Current flight plan (message type designator)
+CRC,Cyclic redundancy check
+CRM,Collision risk model
+CRZ,Cruise
+CS,Call sign
+CS,Cirrostratus
+CTA,Control area
+CTAM,Climb to and maintain
+CTC,Contact
+CTL,Control
+CTN,Caution
+CTR,Control zone
+CU,Cumulus
+CUF,Cumuliform
+CUST,Customs
+CVR,Cockpit voice recorder
+CW,Continuous wave
+CWY,Clearway
+D,Downward (tendency in RVR during previous 10 minutes)
+D...,Danger area(followed by identification)
+DA,Decision altitude
+D-ATIS,"(to be pronounced ""DEE-ATIS"") Data link automatic terminal information service"
+DCD,Double channel duplex
+DCKG,Docking
+DCP,Datum crossing point
+DCPC,Direct controller-pilot communications
+DCS,Double channel simplex
+DCT,Direct (in relation to flight plan clearances and type of approach)
+DE*,From (used to precede the call sign of the calling station) (to be used in AFS as a procedure signal)
+DEC,December
+DEG,Degrees
+DEP,Depart or departure
+DEP,Departure (message type designator)
+DEPO,Deposition
+DER,Departure end of the runway
+DES,Descend to or descending to
+DEST,Destination
+DETRESFA,Distress phase
+DEV,Deviation or deviating
+DF,Direction finding
+DFDR,Digital flight data recorder
+DFTI,Distance from touchdown indicator
+DH,Decision height
+DIF,Diffuse
+DIST,Distance
+DIV,Divert or diverting
+DLA,Delay or delayed
+DLA,Delay (message type designator)
+DLIC,Data link initiation capability
+DLY,Daily
+DME,Distance measuring equipment
+DNG,Danger or dangerous
+DOM,Domestic
+DP,Dew point temperature
+DPT,Depth
+DR,Dead reckoning
+DR...,"Low drifting(followed by DU = dust, SA = sand or SN = snow)"
+DRG,During
+DS,Duststorm
+DSB,Double sideband
+DTAM,Descend to and maintain
+DTG,Date-time group
+DTHR,Displaced runway threshold
+DTRT,Deteriorate or deteriorating
+DTW,Dual tandem wheels
+DU,Dust
+DUC,Dense upper cloud
+DUPE,This is a duplicate message (to be used in AFS as a procedure signal)
+DUR,Duration
+D-VOLMET,Data link VOLMET
+DVOR,Doppler VOR
+DW,Dual wheels
+DZ,Drizzle
+E,East or eastern longitude
+EAT,Expected approach time
+EB,Eastbound
+EDA,Elevation differential area
+EEE,Error(to be used in AFS as a procedure signed)
+EET,Estimated elapsed time
+EFC,Expected further clearance
+EFIS,Electronic flight instrument system
+EGNOS,European geostationary navigation overlay service
+EHF,Extremely high frequency [30 000 to 300 000 MHz]
+ELBA,Emergency location beacon - aircraft
+ELEV,Elevation
+ELR,Extra long range
+ELT,Emergency locator transmitter
+EM,Emission
+EMBD,Embedded in a layer (to indicate cumulonimbus embedded in layers of other clouds)
+EMERG,Emergency
+END,Stop-end (related to RVR)
+ENE,East-north-east
+ENG,Engine
+ENR,En route
+ENRC...,Enroute chart(followed by name/title)
+EOBT,Estimated off-block time
+EQPT,Equipment
+ER*,Here...or herewith
+ESE,East-south-east
+EST,Estimate or estimated or estimation (message type designator)
+ETA,Estimated time of arrival or estimating arrival
+ETD,Estimated time of departure or estimating departure
+ETO,Estimated time over significant point
+EUR RODEX,European regional OPMET data exchange
+EV,Every
+EVS,Enhanced vision system
+EXC,Except
+EXER,Exercises or exercising or to exercise
+EXP,Expect or expected or expecting
+EXTD,Extend or extending
+F,Fixed
+FA,Course from a fix to an altitude
+FAC,Facilities
+FAF,Final approach fix
+FAL,Facilitation of international air transport
+FAP,Final approach point
+FAS,Final approach segment
+FATO,Final approach and take-off area
+FAX,Facsimile transmission
+FBL,"Light (used to indicate the intensity of weather phenomena, interference or static reports, e.g. FBL RA = light rain)"
+FC,Funnel cloud (tornado or water spout)
+FCST,Forecast
+FCT,Friction coefficient
+FDPS,Flight data processing system
+FEB,February
+FEW,Few
+FG,Fog
+FIC,Flight information centre
+FIR,Flight information region
+FIS,Flight information service
+FISA,Automated flight information service
+FL,Flight level
+FLD,Field
+FLG,Flashing
+FLR,Flares
+FLT,Flight
+FLTCK,Flight check
+FLUC,Fluctuating or fluctuation or fluctuated
+FLW,Follow(s) or following
+FLY,Fly or flying
+FM,Course from a fix to manual termination (used in navigation database coding)
+FM,From
+FM...,From(followed by time weather change is forecast to begin)
+FMC,Flight management computer
+FMS,Flight management system
+FMU,Flow management unit
+FNA,Final approach
+FPAP,Flight path alignment point
+FPL,Filed flight plan (message type designator)
+FPM,Feet per minute
+FPR,Flight plan route
+FR,Fuel remaining
+FREQ,Frequency
+FRI,Friday
+FRNG,Firing
+FRONT,Front (relating to weather)
+FROST,Frost (used in aerodrome warnings)
+FRQ,Frequent
+FSL,Full stop landing
+FSS,Flight service station
+FST,First
+FT,Feet (dimensional unit)
+FTE,Flight technical error
+FTP,Fictitious threshold point
+FTT,Flight technical tolerance
+FU,Smoke
+FZ,Freezing
+FZDZ,Freezing drizzle
+FZFG,Freezing fog
+FZRA,Freezing rain
+G,Green
+G...,Variations from the mean wind speed(gusts) (followed byJigures in METAR/SPECI and TAF)
+GA,"Go ahead, resume sending (to be used in AFS as a procedure signal)"
+G/A,Ground-to-air
+G/A/G,Ground-to-air and air-to-ground
+GAGAN,GPS and geostationary earth orbit augmented navigation 
+GAIN,Airspeed or headwind gain
+GAMET,Area forecast for low-level flights
+GARP,GBAS azimuth reference point
+GBAS,"(to be pronounced ""GEE-BAS”) Ground-based augmentation system"
+GCA,Ground controlled approach system or ground controlled approach
+GEN,General
+GEO,Geographic or true
+GES,Ground earth station
+GLD,Glider
+GLONASS,"(to be pronounced ""GLO-NAS"") Global orbiting navigation satellite system"
+GLS,GBAS landing system
+GMC . .,Ground movement chart (followed by name/title)
+GND,Ground
+GNDCK,Ground check
+GNSS,Global navigation satellite system
+GP,Glide path
+GPA,Glide path angle
+GPIP,Glide path intercept point
+GPS,Global positioning system
+GPWS,Ground proximity warning system
+GR,Hail
+GRAS,"(to be pronounced “""GRASS”"")Ground-based regional augmentation system"
+GRASS,Grass landing area
+GRIB,Processed meteorological data in the form of grid point values expressed in binary form(meteorological code)
+GRVL,Gravel
+GS,Ground speed
+GS,Small hail and/or snow pellets
+GUND,Geoid undulation
+H,High pressure area or the centre of high pressure
+H24,Continuous day and night service
+HA,Holding/racetrack to an altitude
+HAPI,Helicopter approach path indicator
+HBN,Hazard beacon
+HDF,High frequency direction-finding station
+HDG,Heading
+HEL,Helicopter
+HF,High frequency [3 000 to 30 000 kHz]
+HF,Holding/racetrack to a fix
+HGT,Height or height above
+HJ,Sunrise to sunset
+HLDG,Holding
+HM,Holding/racetrack to a manual termination
+HN,Sunset to sunrise
+HO,Service available to meet operational requirements
+HOL,Holiday
+HOSP,Hospital aircraft
+HPA,Hectopascal
+HR,Hours
+HS,Service available during hours of scheduled operations
+HUD,Head-up display
+HURCN,Hurricane
+HVDF,High and very high frequency direction-finding stations (at the same location)
+HVY,Heavy
+HVY,"Heavy (used to indicate the intensity of weather phenomena, e.g. HVY RA = heavy rain)"
+HX,No specific working hours
+HYR,Higher
+HZ,Haze
+HZ,Hertz (cycle per second)
+IAC...,Instrument approach chart(followed by name/title)
+IAF,Initial approach fix
+IAO,In and out of clouds
+IAP,Instrument approach procedure
+IAR,Intersection of air routes
+IAS,Indicated airspeed
+IBN,Identification beacon
+IC,"Ice crystals (very small ice crystals in suspension, also known as diamond dust)"
+ICE,Icing
+ID,Identifier or identify
+IDENT,Identification
+IF,Intermediate approach fix
+IFF,Identification friend/foe
+IFR,Instrument flight rules
+IGA,International general aviation
+ILS,Instrument landing system
+IM,Inner marker
+IMC,Instrument meteorological conditions
+IMG,Immigration
+IMI,Interrogation sign (question mark) (to be used in AFS as a procedure signal)
+IMPR,Improve or improving
+IMT,Immediate or immediately
+INA,Initial approach
+INBD,Inbound
+INC,In cloud
+INCERFA,Uncertainty phase
+INFO,Information
+INOP,Inoperative
+INP,If not possible
+INPR,In progress
+INS,Inertial navigation system
+INSTL,Install or installed or installation
+INSTR,Instrument
+INT,Intersection
+INTL,International
+INTRG,Interrogator
+INTRP,Interrupt or interruption or interrupted
+INTSF,Intensify or intensifying
+INTST,Intensity
+IR,Ice on runway
+IRS,Inertial reference system
+ISA,International standard atmosphere
+ISB,Independent sideband
+ISOL,Isolated
+JAN,January 
+JTST,Jet stream
+JUL,July
+JUN,June
+KG,Kilograms
+KHZ,Kilohertz
+KIAS,Knots indicated airspeed
+KM,Kilometres
+KMH,Kilometres per hour
+KPA,Kilopascal
+KT,Knots
+KW,Kilowatts
+...L,Left (preceded by runway designation number to identify a parallel runway)
+L,"Locator (see LM, LO)"
+L,Low pressure area or the centre of low pressure
+LAM,Logical acknowledgement (message type designator)
+LAN,Inland
+LAT,Latitude
+LCA,Local or locally or location or located
+LDA,Landing distance available
+LDAH,"Landing distance available, helicopter"
+LDG,Landing
+LDI,Landing direction indicator
+LEN,Length
+LF,Low frequency [30 to 300 kHz]
+LGT,Light or lighting
+LGTD,Lighted
+LIH,Light intensity high
+LIL,Light intensity low
+LIM,Light intensity medium
+LINE,Line (used in SIGMET)
+LM,"Locator, middle"
+LMT,Local mean time
+LNAV,Lateral navigation
+LNG,Long (used to indicate the type of approach desired or required)
+LO,"Locator, outer"
+LOC,Localizer
+LONG,Longitude
+LORAN,LORAN (long range air navigation system)
+LOSS,Airspeed or headwind loss
+LPV,Localizer performance with vertical guidance
+LR,The last message received by me was...(to be used in AFS as a procedure signal)
+LRG,Long range
+LS,The last message sent by me was... or Last message was... (to be used in AFS as a procedure signal)
+LTD,Limited
+LTP,Landing threshold point
+LTT,Landline teletypewriter
+LV,Light and variable (relating to wind)
+LVE,Leave or leaving
+LVL,Level
+LVP,Low visibility procedures
+LYR,Layer or layered
+...M,Metres (preceded by figures)
+M...,Mach number(followed by figures)
+M...,Minimum value of runway visual range(followed by figures in METAR/SPECI)
+MAA,Maximum authorized altitude
+MAG,Magnetic
+MAHF,Missed approach holding fix
+MAINT,Maintenance
+MAP,Aeronautical maps and charts
+MAPT,Missed approach point
+MAR,At sea
+MAR,March
+MAS,Manual Al simplex
+MATF,Missed approach turning fix
+MAX,Maximum
+MAY,May
+MBST,Microburst
+MCA,Minimum crossing altitude
+MCW,Modulated continuous wave
+MDA,Minimum descent altitude
+MDF,Medium frequency direction-finding station
+MDH,Minimum descent height
+MEA,Minimum en-route altitude
+MEHT,Minimum eye height over threshold（for visual　approach slope indicator systems)
+MET,Meteorological or meteorology
+METAR,Aerodrome routine meteorological report(in meteorological code)
+MET,Local routine meteorological report (in abbreviated plain language)
+REPORT,국지정기기상보고(평문 약어 사용)
+MF,Medium frequency [300 to 3 000 kHz]
+MHDF,Medium and high frequency direction-finding stations (at the same location)
+MHVDF,"Medium, high and very high frequency direction-finding stations (at the same location)"
+MHZ,Megahertz
+MID,Mid-point (related to RVR)
+MIFG,Shallow fog
+MIL,Military
+MIN,Minutes
+MIS,Missing...(transmission identification) (to be used in AFS as a procedure signal)
+MKR,Marker radio beacon
+MLS,Microwave landing system
+MM,Middle marker
+MNM,Minimum
+MNPS,Minimum navigation performance specifications
+MNT,Monitor or monitoring or monitored
+MNTN,Maintain
+MOA,Military operating area
+MOC,Minimum obstacle clearance (required)
+MOCA,Minimum obstacle clearance altitude
+MOD,"Moderate (used to indicate the intensity of weather phenomena, interference or static reports, e.g. MODRA = moderate rain)"
+MON,Above mountains
+MON,Monday
+MOPS,Minimum operational performance standards
+MOV,Move or moving or movement
+MPS,Metres per second
+MRA,Minimum reception altitude
+MRG,Medium range
+MRP,ATS/MET reporting point
+MS,Minus
+MSA,Minimum sector altitude
+MSAS,Multifunctional transport satellite (MTSAT) satellite-based augmentation system
+MSAW,Minimum safe altitude warning
+MSG,Message
+MSL,Mean sea level
+MSR,Message...(transmission identification) has been misrouted (to be used in AFS as a procedure signal)
+MSSR,Monopulse secondary surveillance radar
+MT,Mountain
+MTU,Metric units
+MTW,Mountain waves
+MVDF,Medium and very high frequency direction finding stations (at the same location)
+MWO,Meteorological watch office
+MX,Mixed type of ice formation (white and clear)
+N,No distinct tendency (in RVR during previous 10 minutes)
+N,North or northern latitude
+NADP,Noise abatement departure procedure
+NASC,National AIS system centre
+NAT,North Atlantic
+NAV,Navigation
+NB,Northbound
+NBFR,Not before
+NC,No change
+NCD,No cloud detected (used in automated METAR/SPECI)
+NDB,Non-directional radio beacon
+NDV,No directional variations available (used in automated METAR/SPECI)
+NE,North-east
+NEB,North-eastbound
+NEG,No or negative or permission not granted or that is not correct
+NGT,Night
+NIL,None or I have nothing to send to you
+NM,Nautical miles
+NML,Normal
+NN,"No name, unnamed"
+NNE,North-north-east
+NNW,North-north-west
+NO,No (negative) (to be used in AFS as a procedure signal)
+NOF,International NOTAM office
+NOSIG,No significant change (used in trend-type landing forecasts)
+NOTAM,"A notice distributed by means of telecommunication containing information concerning the establishment, condition or change in any aeronautical facility, service, procedure or hazard, the timely knowledge of which is essential to  personnel concerned with flight operations"
+NOV,November
+NOZ,Normal operating zone
+NPA,Non-precision approach
+NR,Number
+NRH,No reply heard
+NS,Nimbostratus
+NSC,Nil significant cloud
+NSE,Navigation system error
+NSW,Nil significant weather
+NTL,National
+NTZ,No transgression zone
+NW,North-west
+NWB,North-westbound
+NXT,Next
+OAC,Oceanic area control centre
+OAS,Obstacle assessment surface
+OBS,Observe or observed or observation
+OBSC,Obscure or obscured or obscuring
+OBST,Obstacle
+OCA,Obstacle clearance altitude
+OCA,Oceanic control area
+OCC,Occulting (light)
+OCH,Obstacle clearance height
+OCNL,Occasional or occasionally
+OCS,Obstacle clearance surface
+OCT,October
+OFZ,Obstacle free zone .
+OGN,Originate (to be used in AFS as a procedure signal)
+OHD,Overhead
+OIS,Obstacle identification surface
+OK,We agree or It is correct (to be used in AFS as a procedure signal)
+OLDI,On-line data interchange
+OM,Outer marker
+OPA,"Opaque, white type of ice formation"
+OPC,Control indicated is operational control
+OPMET,Operational meteorological (information)
+OPN,Open or opening or opened
+OPR,Operator or operate or operative or operating or operational
+OPS,Operations
+O/R,On request
+ORD,Order
+OSV,Ocean station vessel
+OTP,On top
+OTS,Organized track system
+OUBD,Outbound
+OVC,Overcast
+P...,Maximum value of wind speed or runway visual range(fallowed by figures in METAR/SPECI and TAF)
+P...,Prohibited area(followed by identifcation)
+PA,Precision approach
+PALS,Precision approach lighting system (specify category)
+PANS,Procedures for air navigation services
+PAPI,Precision approach path indicator
+PAR,Precision approach radar
+PARL,Parallel
+PATC...,Precision approach terrain chart(followed by name/title)
+PAX,Passenger(s)
+PBN,Performance-based navigation
+PCD,Proceed or proceeding
+PCL,Pilot-controlled lighting
+PCN,Pavement classification number
+PDC,Pre-departure clearance
+PDG,Procedure design gradient
+PER,Performance
+PERM,Permanent
+PIB,Pre-flight information bulletin
+PJE,Parachute jumping exercise
+PL,Ice pellets
+PLA,Practice low approach
+PLN,Flight plan 
+PLVL,Present level
+PN,Prior notice required
+PNR,Point of no return
+PO,Dust/sand whirls (dust devils)
+POB,Persons on board
+POSS,Possible
+PPI,Plan position indicator
+PPR,Prior permission required
+PPSN,Present position
+PRFG,Aerodrome partially covered by fog
+PRI,Primary
+PRKG,Parking
+PROB,Probability
+PROC,Procedure
+PROV,Provisional
+PRP,Point-in-space reference point
+PS,Plus
+PSG,Passing
+PSN,Position
+PSP,Pierced steel plank
+PSR,Primary surveillance radar
+PSYS,Pressure system(s)
+PTN,Procedure turn
+PTS,Polar track structure
+PWR,Power
+QD,Do you intend to ask me for a series of bearings? or I intend to ask you for a series of bearings (to be used in radiotelegraphy as a Q Code)
+QDM,Magnetic heading (zero wind)
+QDR,Magnetic bearing
+QFE,Atmospheric pressure at aerodrome elevation(or at runway threshold)
+QFU,Magnetic orientation of runway
+QGE,What is my distance to your station? or Your distance to my station is(distance figures and units) (to be used in radiotelegraphy as a Q Code)
+QJH,Shall I run my test tape/a test sentence? or Run your test tape/a test sentence (to be used in AFS as a Q Code).
+QNH,Altimeter sub-scale setting to obtain elevation when on the ground
+QSP,Will you relay to... . free of charge? or I will relay to'... free of charge (to be used in AFS as a Q Code)
+QTA,Shall I cancel telegram number...? or Cancel telegram number... (to be used in AFS as a Q Code)
+QTE,True bearing
+QTF,"Will you give me the position of my station according to the bearings taken by the D/F stations which you control? or The position of your station according to the bearings taken by the D/F stations that I control was . . . latitude . . . longitude (or other indication of position), class . . . at . . . hours (to be used in radiotelegraphy as a Q Code)"
+QUAD,Quadrant
+QUJ,Will you indicate the TRUE track to reach you? or The TRUE track to reach me is. . . degrees at. . . hours (to be used in radiotelegraphy as a Q Code)
+...R,Right (preceded by runway designation number to identifi a parallel runway)
+R,Rate of turn
+R,Red
+R...,Restricted area(followed by identification)
+R...,Runway(followed by figures in METAR/SPECI)
+R,Received (acknowledgement of receipt) (to be used in AFS as a procedure signal)
+RA,Rain
+RA,Resolution advisory
+RAC,Rules of the air and air traffic services
+RAG,Ragged
+RAG,Runway arresting gear
+RAI,Runway alignment indicator
+RAIM,Receiver autonomous integrity monitoring
+RASC,Regional AIS system centre
+RASS,Remote altimeter setting source
+RB,Rescue boat
+RCA,Reach cruising altitude
+RCC,Rescue coordination centre
+RCF,Radiocommunication failure (message type designator)
+RCH,Reach or reaching
+RCL,Runway centre line
+RCLL,Runway centre line light(s)
+RCLR,Recleared
+RCP,Required communication performance
+RDH,Reference datum height
+RDL,Radial
+RDO,Radio
+RE,"Recent (used to qualify weather phenomena, e.g. RERA = recent rain)"
+REC,Receive or receiver
+REDL,Runway edge light(s)
+REF,Reference to... or refer to...
+REG,Registration
+RENL,Runway end light(s)
+REP,Report or reporting or reporting point
+REQ,Request or requested
+RERTE,Re-route
+RESA,Runway end safety area
+RF,Constant radius arc to a fix
+RG,Range (lights)
+RHC,Right-hand circuit
+RIF,Reclearance in flight
+RIME,Rime (used in aerodrome warnings)
+RITE,Right (direction of turn)
+RL,Report leaving
+RLA,Relay to
+RLCE,Request level change en route
+RLLS,Runway lead-in lighting system
+RLNA,Request level not available
+RMK,Remark
+RNAV,Area navigation
+RNG,Radio range
+RNP,Required navigation performance
+ROBEX,Regional OPMET bulletin exchange (scheme)
+ROC,Rate of climb
+ROD,Rate of descent
+RON,Receiving only
+RPDS,Reference path data selector
+RPI,Radar position indicator
+RPL,Repetitive flight plan
+RPLC,Replace or replaced
+RPS,Radar position symbol
+RPT,Repeat or I repeat (to be used in AFS as a procedure signal)
+RQ,Request (to be used in AFS as a procedure signal)
+RQMNTS,Requirements
+RQP,Request flight plan (message type designator)
+RQS,Request supplementary flight plan (message tvpe designator)
+RR,Report reaching 
+RRA,Delayed meteorological message (message type designator)
+RSC,Rescue sub-centre
+RSCD,Runway surface condition
+RSP,Responder beacon
+RSR,En-route surveillance radar
+RSS,Root sum square
+RTD,Delayed (used to indicate delayed meteorological message; message type designator)
+RTE,Route
+RTF,Radiotelephone
+RTG,Radiotelegraph
+RTHL,Runway threshold light(s)
+RTN,Return or returned or returning
+RTODAH,"Rejected take-off distance available, helicopter"
+RTS,Return to service
+RTT,Radioteletypewriter
+RTZL,Runway touchdown zone light(s)
+RUT,Standard regional route transmitting frequencies
+RV,Rescue vessel
+RVR,Runway visual range
+RVSM,Reduced vertical separation minimum (300 m(1 000 ft)) between FL 290 and FL 410
+RWY,Runway
+S,South or southern latitude
+S...,State of the sea(followed by figures in METAR/SPECI)
+SA,Sand
+SALS,Simple approach lighting system
+SAN,Sanitary
+SAP,As soon as possible
+SAR,Search and rescue
+SARPS,Standards and Recommended Practices[ICAO]
+SAT,Saturday
+SATCOM,Satellite communication
+SB,Southbound
+SBAS,Satellite-based augmentation system
+SC,Stratocumulus
+SCT,Scattered
+SD,Standard deviation
+SDBY,Stand by
+SDF,Step down fix
+SE,South-east
+SEA,Sea (used in connection with sea-surface temperature and state of the sea)
+SEB,South-eastbound
+SEC,Seconds
+SECN,Section
+SECT,Sector
+SELCAL,Selective calling system
+SEP,September
+SER,Service or servicing or served
+SEV,Severe (used e.g. to qualify icing and turbulence reports)
+SFC,Surface
+SG,Snow grains
+SGL,Signal
+SH...,"Shower(followed by RA = rain, SN = snow, PL = icepellets, GR = hail, GS = small hail and/or snow pellets or combinations thereof; e.g. SHRASN = showers of rain and snow)"
+SHF,Super high frequency [3 000 to 30 000 MHZ]
+SI,International system of units
+SID,Standard instrument departure
+SIF,Selective identification feature
+SIG ,Significant
+SIGMET,Information concerning en-route weather phenomena which may affect the safety of aircraft operations
+SIMUL ,Simultaneous or simultaneously
+SIWL,Single isolated wheel load
+SKED,Schedule or scheduled
+SLP,Speed limiting point
+SLW,Slow
+SMC ,Surface movement control
+SMR,Surface movement radar
+SN,Snow
+SNOCLO ,Aerodrome closed due to snow (used in METAR/SPECI)
+SNOWTAM,"Special series NOTAM notifying the presence or removal of hazardous  conditions due to snow, ice, slush or standing water associated with snow, slush and ice on the movement area, by means of a specific format"
+SOC,Start of climb
+SPECI,Aerodrome special meteorological report (in meteorological code)
+SPECIAL,Local special meteorological report(in abbreviated plain language)
+SPI,Special position indicator
+SPL,Supplementary flight plan (message type designator)
+SPOC,SAR point of contact
+SPOT,Spot wind
+SQ,Squall
+SQL,Squall line
+SR,Sunrise
+SRA,Surveillance radar approach
+SRE,Surveillance radar element of precision approach radar system
+SRG,Short range
+SRR,Search and rescue region
+SRY,Secondary
+SS,Sandstorm
+SS,Sunset
+SSB,Single sideband
+SSE,South-south-east
+SSR,Secondary surveillance radar
+SST,Supersonic transport
+SSW,South-south-west
+ST,Stratus
+STA,Straight-in approach
+STAR,Standard instrument arrival
+STD,Standard
+STF,Stratiform
+STN,Station
+STNR,Stationary
+STOL,Short take-off and landing
+STS,Status
+STWL,Stopway light(s)
+SUBJ,Subject to
+SUN,Sunday
+SUP,Supplement (AIP Supplement)
+SUPPS,Regional supplementary procedures
+SVC,Service message
+SVCBL,Serviceable
+SW,South-west
+SWB,South-westbound
+SWY,Stopway
+T,Temperature
+...T,True (preceded by a bearing to indicate reference to True North)
+TA,Traffic advisory
+TA,Transition altitude
+TAA,Terminal arrival altitude
+TACAN,UHF tactical air navigation aid
+TAF,Aerodrome forecast (in meteorological code)
+TA/H,Turn at an altitude/height
+TAIL,Tail wind
+TAR,Terminal area surveillance radar
+TAS,True airspeed
+TAX,Taxiing or taxi
+TC,Tropical cyclone
+TCAC,Tropical cyclone advisory centre
+TCAS RA,Traffic alert and collision avoidance system resolution advisory
+TCH,Threshold crossing height
+TCU,Towering cumulus
+TDO,Tornado
+TDZ,Touchdown zone
+TECR,Technical reason
+TEL,Telephone
+TEMPO,Temporary or temporarily
+TF,Track to fix
+TFC,Traffic
+TGL,Touch-and-go landing
+TGS,Taxiing guidance system
+THR,Threshold
+THRU,Through
+THU,Thursday
+TIBA,Traffic information broadcast by aircraft
+TIL,Until
+TIP,Until past...(place)
+TKOF,Take-off
+TL...,Till(followed by time by which weather change is forecast to end)
+TLOF,Touchdown and lift-off area
+TMA,Terminal control area
+TN...,Minimum temperature(followed by figures in TAF)
+TNA,Turn altitude
+TNH,Turn height
+TO...,To... (place)
+TOC,Top of climb
+TODA,Take-off distance available
+TODAH,"Take-off distance available, helicopter"
+TOP,Cloud top
+TORA,Take-off run available
+TOX,Toxic
+TP,Turning point
+TR,Track
+TRA,Temporary reserved airspace
+TRANS,Transmits or transmitter
+TREND,Trend forecast
+TRL,Transition level
+TROP,Tropopause
+TS,"Thunderstorm (in aerodrome reports and forecasts, TS used alone means  thunder heard but no precipitation at the aerodrome)"
+TS...,"Thunderstorm(followed by RA = rain, SN = snow: PL = icepellets, GR = hail, GS = small hail and/or snow pellets or combinations thereof; e.g. TSRASN = thunderstorm with rain and snow)"
+TSUNAMI,Tsunami (used in aerodrome warnings)
+TT,Teletypewriter
+TUE,Tuesday
+TURB,Turbulence
+T-VASIS,T visual approach slope indicator system
+TVOR,Terminal VOR
+TWR,Aerodrome control tower or aerodrome control
+TWY,Taxiway
+TWYL,Taxiway-link
+TX ...,Maximum temperature (followed by figures in TAF)
+TXT,"Text (when the abbreviation is used to request a repetition, the question mark(IM) precedes the abbreviation, e.g. IMITXT) (to be used in AFS as a procedure signal)"
+TYP,Type of aircraft
+TYPH,Typhoon
+U,Upward (tendency in RVR during previous I0 minutes)
+UA,Unmanned aircraft
+UAB... ,Until advised by...
+UAC ,Upper area control centre
+UAR,Upper air route
+UAS,Unmanned aircraft system
+UDF,Ultra high frequency direction-finding station
+UFN,Until further notice
+UHDT,Unable higher due traffic
+UHF,Ultra high frequency [300 to 3 000 MHZ]
+UIC,Upper information centre
+UIR,Upper flight information region
+ULR,Ultra long range
+UNA,Unable
+UNAP,Unable to approve
+UNL,Unlimited
+UNREL,Unreliable
+UP,Unidentified precipitation (used in automated METAR/SPEC)
+U/S,Unserviceable
+UTA,Upper control area
+UTC,Coordinated Universal Time
+...V...,"Variations from the mean wind direction(preceded and followed by figures in METAR/SPECI, e.g. 350V070)"
+VA,Heading to an altitude
+VA,Volcanic ash
+VAAC,Volcanic ash advisory centre
+VAC...,Visual approach chart(followed by name/title)
+VAL,In valleys
+VAN,Runway control van
+VAR,Magnetic variation
+VAR,Visual-aural radio range
+VASIS,Visual approach slope indicator systems 
+VC...,"Vicinity of the aerodrome Cfollowed by, FG =fog, FC =funnel cloud, SH = shower, PO = dudsand whirls, BLDU = blowing dust, BLSA = blowing sand, BLSN = blowing snow, DS = duststorm, SS = sandstorm, TS = thunderstorm or VA =  volcanic ash,e.g. VCFG = vicinity fog)"
+VCY,Vicinity
+VDF,Very high frequency direction-finding station
+VER,Vertical
+VFR,Visual flight rules
+VHF,Very high frequency [30 to 300 MHZ]
+VI,Heading to an intercept
+VIP,Very important person
+VIS,Visibility
+VLF,Very low frequency [3 to 30 kHz]
+VLR,Very long range
+VM,Heading to a manual termination
+VMC,Visual meteorological conditions
+VNAV,Vertical navigation
+VOLMET,Meteorological information for aircraft in flight
+VOR,VHF omnidirectional radio range
+VORTAC,VOR and TACAN combination
+VOT,VOR airborne equipment test facility
+VPA,Vertical path angle
+VPT,Visual manoeuvre with prescribed track
+VRB,Variable
+VSA,By visual reference to the ground
+VSP,Vertical speed
+VTF,Vector to final
+VTOL,Vertical take-off and landing
+VV...,Vertical visibility(followed by figures in METAR/SPECI and TAF)
+W,West or western longitude
+W,White
+W...,Sea-surface temperature(followed by figures in METAR/SPECI)
+WAAS,Wide area augmentation system
+WAC...,World Aeronautical Chart - ICAO  1 : 1 000 000(followed by name/title)
+WAFC,World area forecast centre
+WB,Westbound
+WBAR,Wing bar lights
+WDI,Wind direction indicator
+WDSPR,Widespread
+WED,Wednesday
+WEF,With effect from or effective from
+WGS-84,World Geodetic System - 1984
+WI,Within
+WID,Width or wide
+WIE,With immediate effect or effective immediately
+WILCO,Will comply
+WIND,Wind
+WIP,Work in progress
+WKN,Weaken or weakening
+WNW,West-north-west
+WO,Without
+WPT,Way-point
+WRNG,Warning
+WS,Wind shear
+WSPD,Wind speed
+WSW,West-south-west
+WT,Weight
+WTSPT,Waterspout
+WWW,Worldwide web
+WX,Weather
+X,Cross
+XBAR,Crossbar (of approach lighting system)
+XNG,Crossing
+XS,Atmospherics
+Y,Yellow
+YCZ,Yellow caution zone (runway lighting;)
+YES,Yes (affirmative) (to be used in AFS as a procedure signal)
+YR,Your
+Z,Coordinated Universal Time (in meteorological messages)

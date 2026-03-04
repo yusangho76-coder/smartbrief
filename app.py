@@ -143,77 +143,33 @@ def allowed_file(filename):
 
 def extract_route_from_page2(pdf_path: str) -> str:
     """
-    PDF 파일의 두 번째 페이지(Page 2)에서 route 문자열 추출
-    "공항코드.." 패턴 (예: RKSI..)으로 시작해서 DIST 키워드 전까지 추출
-    이 패턴을 만족하지 못하면 빈 문자열 반환
+    PDF에서 본경로 route 추출. (NOTAM 분석·구글 지도 항로 표시용)
+    우선 2페이지, 실패 시 1·3·0·4페이지 순으로 시도. 로직은 ats_route_extractor.extract_ofp_route_from_page 사용.
     """
-    import re
     import pdfplumber
-    
+    from src.ats_route_extractor import extract_ofp_route_from_page
+
     try:
         with pdfplumber.open(pdf_path) as pdf:
-            # 두 번째 페이지 확인 (인덱스는 0부터 시작하므로 1이 두 번째 페이지)
-            if len(pdf.pages) < 2:
-                logger.debug("extract_route_from_page2: PDF에 두 번째 페이지가 없음")
+            total = len(pdf.pages)
+            if total == 0:
+                logger.debug("extract_route_from_page2: PDF 페이지 없음")
                 return ''
-            
-            # 두 번째 페이지 텍스트 추출
-            page2 = pdf.pages[1]
-            page2_text = page2.extract_text()
-            
-            if not page2_text:
-                logger.debug("extract_route_from_page2: 두 번째 페이지에서 텍스트를 추출할 수 없음")
-                return ''
-            
-            # 공항코드.. 패턴 찾기 (예: RKSI.., LOWW.. 등)
-            airport_pattern = r'\b([A-Z]{4}\.\.\.?)'
-            airport_match = re.search(airport_pattern, page2_text, re.IGNORECASE | re.MULTILINE)
-            
-            if not airport_match:
-                logger.debug("extract_route_from_page2: 두 번째 페이지에서 공항코드.. 패턴을 찾을 수 없음")
-                return ''
-            
-            # 공항코드 패턴의 시작 위치
-            start_pos = airport_match.start()
-            
-            # 시작 위치부터 첫 번째 DIST 키워드까지 찾기
-            remaining_text = page2_text[start_pos:]
-            
-            # DIST 키워드를 찾되, 단어 경계로 구분된 것만 찾기
-            dist_pattern = r'\bDIST\b'
-            dist_match = re.search(dist_pattern, remaining_text, re.IGNORECASE | re.MULTILINE)
-            
-            if not dist_match:
-                logger.debug("extract_route_from_page2: DIST 키워드를 찾을 수 없음")
-                return ''
-            
-            # DIST 키워드의 시작 위치
-            dist_pos = dist_match.start()
-            
-            # 공항코드 패턴부터 DIST 키워드 전까지 추출
-            route = remaining_text[:dist_pos].strip()
-            
-            # 공백 정리 (여러 공백을 하나로, 줄바꿈을 공백으로)
-            route = ' '.join(route.split())
-            
-            # 추출된 route가 너무 길면 (예: 500자 이상) 잘못된 추출로 간주
-            if len(route) > 500:
-                logger.warning(f"extract_route_from_page2: 추출된 route가 너무 깁니다 ({len(route)}자). 잘못된 추출로 간주하고 빈 문자열 반환")
-                return ''
-            
-            # 추출된 route가 NOTAM 본문처럼 보이는지 확인
-            # NOTAM 본문에는 보통 "E)", "F)", "G)" 같은 필드 구분자가 포함됨
-            if re.search(r'[A-Z]\)\s+', route):
-                logger.warning(f"extract_route_from_page2: 추출된 route에 NOTAM 필드 구분자가 포함되어 있습니다. 잘못된 추출로 간주하고 빈 문자열 반환")
-                return ''
-            
-            if route:
-                logger.info(f"extract_route_from_page2: route 추출 성공, 길이={len(route)}, 시작={route[:50]}, 끝={route[-50:]}")
-                return route
-            else:
-                logger.debug("extract_route_from_page2: 추출된 route가 비어있음")
-                return ''
-            
+            page_indices = [1] if total >= 2 else [0]
+            if total >= 3:
+                page_indices.extend([0, 2])
+            if total >= 5:
+                page_indices.append(4)
+            for idx in page_indices:
+                if idx >= total:
+                    continue
+                page_text = pdf.pages[idx].extract_text()
+                route = extract_ofp_route_from_page(page_text or "")
+                if route:
+                    logger.info(f"extract_route_from_page2: 페이지 {idx + 1}에서 추출, 길이={len(route)}")
+                    return route
+            logger.debug("extract_route_from_page2: 모든 시도 페이지에서 경로 패턴을 찾지 못함")
+            return ''
     except Exception as e:
         logger.error(f"extract_route_from_page2: 오류 발생 - {str(e)}")
         return ''
@@ -559,8 +515,8 @@ def ensure_files_cleaned():
     """파일 정리가 필요하면 수행 (한 번만 실행)"""
     global _files_cleaned
     if not _files_cleaned:
-        cleanup_files(UPLOAD_FOLDER, max_files=2)  # 최신 2개만 유지 (용량 절감 + 이전 파일 확인 가능)
-        cleanup_files(TEMP_FOLDER, max_files=2)  # 최신 2개만 유지 (용량 절감 + 이전 파일 확인 가능)
+        cleanup_files(UPLOAD_FOLDER, max_files=3)  # 최신 3개만 유지 (용량 절감 + 이전 파일 확인 가능)
+        cleanup_files(TEMP_FOLDER, max_files=3)  # 최신 3개만 유지 (용량 절감 + 이전 파일 확인 가능)
         _files_cleaned = True
 
 # 모듈 초기화
@@ -593,6 +549,11 @@ def get_notam_comprehensive_analyzer():
 LAST_NOTAMS = []
 LAST_NOTAMS_SOURCE = None  # 최근 소스 파일명
 LAST_NOTAMS_INDEXED_BY_AIRPORT = {}  # { ICAO: [notam, ...] }
+LAST_PACKAGE3_TEXT = None  # Package 3 원문 텍스트 캐시 (Cloud Run 호환성)
+
+def get_last_package3_text():
+    """Package 3 텍스트 캐시 반환 (순환 import 방지용)"""
+    return LAST_PACKAGE3_TEXT
 
 def _index_notams_by_airport(notams):
     indexed = {}
@@ -614,6 +575,12 @@ def _index_notams_by_airport(notams):
     except Exception:
         return {}
 
+@app.route('/sw.js')
+def service_worker():
+    """Service Worker - 오프라인에서 저장된 분석 결과 확인 지원"""
+    return send_from_directory(app.static_folder, 'sw.js', mimetype='application/javascript')
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -622,417 +589,570 @@ def index():
 def test_api():
     return render_template('test_api.html')
 
-@app.route('/validate_ats_fpl', methods=['GET', 'POST'])
-def validate_ats_fpl():
-    """ATS FPL Validator (Streamlit 앱) 실행 및 iframe 임베드"""
-    import socket
-    import threading
-    from pathlib import Path
-    from flask import request
+def convert_markdown_to_html(markdown_text: str) -> str:
+    """
+    마크다운 텍스트를 HTML로 변환하고 인라인 스타일로 스타일 강제 적용
+    """
+    import re
     
-    # 환경 변수에서 Streamlit URL 확인 (Cloud Run 배포 시 사용)
-    streamlit_url = os.environ.get('STREAMLIT_URL', None)
+    if not markdown_text:
+        return ""
     
-    # Cloud Run 환경인지 확인
-    # Cloud Run은 자동으로 K_SERVICE, K_REVISION, PORT 등의 환경 변수를 설정함
-    # 또는 STREAMLIT_URL이 설정되어 있으면 Cloud Run으로 간주
-    k_service = os.environ.get('K_SERVICE', None)
-    k_revision = os.environ.get('K_REVISION', None)
-    is_cloud_run = (k_service is not None and k_service != '') or \
-                   (k_revision is not None and k_revision != '') or \
-                   (streamlit_url is not None and streamlit_url != '')
+    # 디버깅: 원본 텍스트 확인
+    logger.info(f"마크다운 변환 시작, 길이: {len(markdown_text)}")
+    logger.info(f"마크다운 처음 200자: {markdown_text[:200]}")
     
-    if is_cloud_run:
-        # Cloud Run 환경: 환경 변수에서 URL 사용
-        logger.info(f"Cloud Run 환경 감지: K_SERVICE={k_service}, K_REVISION={k_revision}, Streamlit URL = {streamlit_url}")
-        
-        # STREAMLIT_URL이 없으면 경고 로그 출력하고 에러 반환
-        if not streamlit_url or streamlit_url == '':
-            error_msg = "⚠️  Cloud Run 환경이지만 STREAMLIT_URL이 설정되지 않았습니다. Streamlit 앱을 먼저 배포하세요."
-            logger.error(error_msg)
-            if request.method == 'POST':
-                from flask import jsonify
-                try:
-                    return jsonify({
-                        'status': 'error', 
-                        'message': error_msg,
-                        'is_local': False,
-                        'url': None
-                    }), 500
-                except Exception as e:
-                    logger.error(f"JSON 응답 생성 실패: {e}")
-                    return error_msg, 500
-        
-        # POST 요청일 때는 성공 응답만 반환
-        if request.method == 'POST':
-            from flask import jsonify
-            try:
-                return jsonify({'status': 'success', 'url': streamlit_url, 'is_local': False}), 200
-            except Exception as e:
-                logger.error(f"JSON 응답 생성 실패: {e}, streamlit_url={streamlit_url}")
-                return f"Error: {str(e)}", 500
-        # GET 요청일 때는 리다이렉트 HTML 반환
-        return f'''
-        <!DOCTYPE html>
-        <html lang="ko">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <meta http-equiv="refresh" content="0;url={streamlit_url}">
-            <title>ATS FPL Validator로 이동 중...</title>
-        </head>
-        <body>
-            <script>
-                window.open('{streamlit_url}', '_blank');
-                window.location.href = '/';
-            </script>
-            <p>새 탭에서 ATS FPL Validator가 열립니다. <a href="{streamlit_url}" target="_blank">여기를 클릭하세요</a></p>
-        </body>
-        </html>
-        '''
+    html = markdown_text
     
-    # 로컬 환경: 기존 로직 사용
-    # Streamlit 기본 포트 (내부적으로만 사용)
-    streamlit_port = 8501
-    streamlit_url = f"http://localhost:{streamlit_port}"
+    # h3 제목 공통 스타일 (중복 제거)
+    h3_style = 'font-size: 20px !important; font-weight: 700 !important; border-bottom: 2px solid #0d6efd !important; padding-bottom: 6px !important; margin-top: 15px !important; margin-bottom: 0px !important; color: #0d6efd !important;'
+    h3_template = f'<h3 style="{h3_style}"><i class="fas fa-exclamation-triangle me-2"></i>\\1</h3>'
     
-    # 포트가 사용 중인지 확인 (더 정확한 체크)
-    def is_port_in_use(port):
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.settimeout(0.5)
-                result = s.connect_ex(('localhost', port))
-                return result == 0
-        except:
-            return False
+    # 제목 변환 - **숫자. 형식의 제목을 먼저 처리 (### 변환보다 먼저)
+    # **1. 주요 터뷸런스 예상 구간** → <h3>1. 주요 터뷸런스 예상 구간</h3>
+    html = re.sub(r'^\*\*(\d+\.\s+.+?)\*\*$', h3_template, html, flags=re.MULTILINE)
     
-    # 포트가 사용 중이면 기존 프로세스 종료 시도
-    if is_port_in_use(streamlit_port):
-        try:
-            # macOS/Linux에서 포트를 사용하는 프로세스 찾기 및 종료
-            if platform.system() in ['Darwin', 'Linux']:
-                result = subprocess.run(
-                    ['lsof', '-ti', f':{streamlit_port}'],
-                    capture_output=True,
-                    text=True
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    pids = result.stdout.strip().split('\n')
-                    for pid in pids:
-                        if pid:
-                            logger.info(f"포트 {streamlit_port}를 사용하는 프로세스(PID: {pid})를 종료합니다...")
-                            subprocess.run(['kill', '-9', pid], check=False)
-                            import time
-                            time.sleep(0.5)  # 프로세스 종료 대기
-        except Exception as e:
-            logger.warning(f"기존 프로세스 종료 실패: {e}")
+    # 제목 변환 - 숫자. 형식의 제목 처리 (줄 시작에 숫자.가 있는 경우)
+    # 1. 주요 터뷸런스 예상 구간 → <h3>1. 주요 터뷸런스 예상 구간</h3>
+    html = re.sub(r'^(\d+\.\s+.+)$', h3_template, html, flags=re.MULTILINE)
     
-    # Streamlit 앱 시작
+    # 제목 변환 (### 제목 → <h3>제목</h3>) - 인라인 스타일 추가
+    html = re.sub(r'^###\s+(.+)$', h3_template, html, flags=re.MULTILINE)
+    html = re.sub(r'^##\s+(.+)$', r'<h2 style="font-size: 20px !important; font-weight: 600 !important; margin-top: 25px !important; margin-bottom: 15px !important; color: #0d6efd !important;">\1</h2>', html, flags=re.MULTILINE)
+    html = re.sub(r'^#\s+(.+)$', r'<h1 style="font-size: 24px !important; font-weight: 700 !important; margin-top: 30px !important; margin-bottom: 20px !important; color: #0d6efd !important;">\1</h1>', html, flags=re.MULTILINE)
+    
+    # 마크다운 테이블을 HTML 테이블로 변환
+    lines = html.split('\n')
+    in_table = False
+    table_html = []
+    result_lines = []
+    header_processed = False
+    
+    for i, line in enumerate(lines):
+        # 테이블 시작 감지 (|로 시작하는 줄)
+        if re.match(r'^\|.+\|$', line.strip()):
+            if not in_table:
+                in_table = True
+                table_html = []
+                header_processed = False
+            
+            # 헤더 구분선 제거 (|---|---|)
+            if re.match(r'^\|[\s\-:]+\|', line.strip()):
+                header_processed = True
+                continue
+            
+            # 테이블 행 파싱
+            cells = [cell.strip() for cell in line.strip().split('|')[1:-1]]
+            if cells:
+                if not header_processed:
+                    # 헤더 행
+                    # 반응형을 위해 colgroup 제거 (table-layout: auto 사용)
+                    # colgroup은 table-layout: fixed일 때만 효과가 있음
+                    table_html.append('<thead><tr>')
+                    # 테이블 헤더 공통 스타일 (중복 제거)
+                    th_base_style = "background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%) !important; color: white !important; font-weight: 600 !important; font-size: 13px !important; padding: 10px 8px !important; text-align: center !important; vertical-align: middle !important; border: 1px solid #0a58ca !important; box-sizing: border-box !important;"
+                    
+                    for j, cell in enumerate(cells):
+                        # 헤더 셀에서 :--- 형식 제거
+                        cell_clean = re.sub(r':-+\s*$', '', cell).strip()
+                        # 마지막 열(내용 및 근거)은 특별 처리
+                        if j == len(cells) - 1:
+                            th_style = th_base_style + " white-space: normal !important; width: 50% !important; min-width: 500px !important;"
+                        else:
+                            th_style = th_base_style + " white-space: nowrap !important;"
+                        table_html.append(f'<th style="{th_style}">{cell_clean}</th>')
+                    table_html.append('</tr></thead>')
+                    header_processed = True
+                else:
+                    # 데이터 행
+                    # 행의 심각도 판단 (내용 열에서 확인)
+                    severity_class = ""
+                    if len(cells) > 4:  # 내용 및 근거 열이 있는 경우
+                        content_cell = cells[4] if len(cells) > 4 else ""
+                        if 'SEV' in content_cell or 'Severe' in content_cell or '빨간색' in content_cell or 'red' in content_cell.lower():
+                            severity_class = 'data-severity="severe"'
+                        elif 'MODtoSEV' in content_cell or 'MODtoSEV' in content_cell or '노란색' in content_cell or 'yellow' in content_cell.lower():
+                            severity_class = 'data-severity="modtosev"'
+                        elif 'MOD' in content_cell or 'Moderate' in content_cell or '연한 파란색' in content_cell or 'light blue' in content_cell.lower():
+                            severity_class = 'data-severity="moderate"'
+                    
+                    # 행 스타일 결정 (심각도에 따른 배경색)
+                    row_style = ""
+                    if severity_class == 'data-severity="severe"':
+                        row_style = 'style="background-color: #fff5f5 !important; border-left: 4px solid #dc3545 !important;"'
+                    elif severity_class == 'data-severity="modtosev"':
+                        row_style = 'style="background-color: #fffbf0 !important; border-left: 4px solid #ffc107 !important;"'
+                    elif severity_class == 'data-severity="moderate"':
+                        row_style = 'style="background-color: #f0f8ff !important; border-left: 4px solid #0dcaf0 !important;"'
+                    
+                    table_html.append(f'<tr {severity_class} {row_style}>')
+                    for j, cell in enumerate(cells):
+                        # 터뷸런스 레벨에 따른 색상 적용
+                        cell_html = cell
+                        
+                        # 마지막 열(내용 및 근거)인지 확인
+                        is_content_cell = (j == len(cells) - 1)
+                        
+                        # "내용 및 근거" 열에서는 badge를 사용하지 않음 (긴 텍스트이므로)
+                        # 다른 열에서만 badge 사용
+                        if not is_content_cell:
+                            # 배지 공통 스타일 (중복 제거) - if 블록 시작 부분에 정의
+                            badge_base_style = "font-size: 0.9em !important; font-weight: 600 !important; padding: 5px 10px !important; border-radius: 4px !important;"
+                            
+                            # 구간 표시 형식 처리 (예: "22:48Z ~ 01:20Z", "KATCH ~ EEP1")
+                            if ' ~ ' in cell:
+                                # 구간 표시는 특별 스타일 적용
+                                cell_html = f'<span style="color: #0d6efd !important; font-weight: 600 !important; font-size: 14px !important;">{cell}</span>'
+                            # 시간 형식 강조 (예: 22:48Z, 03:45Z)
+                            elif re.match(r'^\d{2}:\d{2}Z', cell.strip()):
+                                cell_html = f'<span class="badge bg-secondary" style="font-family: \'Courier New\', monospace !important; {badge_base_style}">{cell}</span>'
+                            # 숫자만 있는 경우 (예: 380, 360) - bold 적용
+                            # 공백을 제거한 후 순수 숫자인지 확인 (시간 형식이 아닌 경우)
+                            elif re.match(r'^\s*\d+\s*$', cell):
+                                cell_html = f'<span style="font-weight: 700 !important;">{cell.strip()}</span>'
+                            elif 'SR' in cell or 'Moderate' in cell or 'Severe' in cell or 'Light' in cell:
+                                # 터뷸런스 레벨에 따른 색상 적용 (짧은 레이블만)
+                                # SR 범위 파싱 (예: "SR 2-4", "SR 4-5", "SR 7")
+                                sr_max = 0
+                                sr_matches = re.findall(r'SR\s+(\d+)(?:\s*-\s*(\d+))?', cell, re.IGNORECASE)
+                                for match in sr_matches:
+                                    if match[1]:  # 범위인 경우 (예: "SR 2-4")
+                                        sr_max = max(sr_max, int(match[0]), int(match[1]))
+                                    else:  # 단일 값인 경우 (예: "SR 7")
+                                        sr_max = max(sr_max, int(match[0]))
+                                
+                                # SR 기준에 따른 분류: SR 1-3: Light, SR 4: Moderate, SR 5-9: Moderate to Severe, SR 10+: Severe
+                                if sr_max >= 10 or 'Severe' in cell or 'SEV' in cell:
+                                    cell_html = f'<span class="badge bg-danger" style="{badge_base_style}">{cell}</span>'
+                                elif sr_max >= 5 or 'Moderate to Severe' in cell or 'MODtoSEV' in cell:
+                                    cell_html = f'<span class="badge bg-warning text-dark" style="{badge_base_style}">{cell}</span>'
+                                elif sr_max >= 4 or ('Moderate' in cell and 'Light' not in cell and 'Severe' not in cell) or 'MOD' in cell:
+                                    cell_html = f'<span class="badge bg-warning text-dark" style="{badge_base_style}">{cell}</span>'
+                                elif sr_max >= 1 or 'Light' in cell or 'LGT' in cell:
+                                    cell_html = f'<span class="badge bg-info" style="{badge_base_style}">{cell}</span>'
+                                else:
+                                    # SR 값이 없으면 텍스트 기반으로만 판단
+                                    if 'Moderate to Severe' in cell or 'Severe' in cell or 'SEV' in cell:
+                                        cell_html = f'<span class="badge bg-danger" style="{badge_base_style}">{cell}</span>'
+                                    elif 'Moderate' in cell and 'Light' not in cell and 'Severe' not in cell:
+                                        cell_html = f'<span class="badge bg-warning text-dark" style="{badge_base_style}">{cell}</span>'
+                                    else:
+                                        cell_html = f'<span class="badge bg-info" style="{badge_base_style}">{cell}</span>'
+                        else:
+                            # "내용 및 근거" 열: SR 값과 ASC 값을 구별해서 강조
+                            # 1. SR 값 기준 터뷸런스 레벨 강조 (예: "Moderate Turbulence (SR 2-4)")
+                            # 2. ASC 차트 값 강조 (예: "ASC Turbulence Chart 상 연한 파란색(MOD) 영역")
+                            
+                            # SR 값 기준 터뷸런스 레벨 패턴 (예: "Moderate Turbulence (SR 2-4)", "Severe Turbulence (SR 7)")
+                            sr_turbulence_pattern = r'(Moderate|Severe|Light|Moderate to Severe)\s+Turbulence\s*\(SR\s+[\d\-]+\)'
+                            if re.search(sr_turbulence_pattern, cell):
+                                def highlight_sr_turbulence(match):
+                                    level = match.group(1)
+                                    # SR 값 추출하여 SR 기준에 따라 색상 결정
+                                    sr_match = re.search(r'SR\s+(\d+)(?:\s*-\s*(\d+))?', match.group(0))
+                                    sr_max = 0
+                                    if sr_match:
+                                        if sr_match.group(2):  # 범위인 경우
+                                            sr_max = max(int(sr_match.group(1)), int(sr_match.group(2)))
+                                        else:  # 단일 값
+                                            sr_max = int(sr_match.group(1))
+                                    
+                                    # SR 기준: SR 1-3: Light, SR 4: Moderate, SR 5-9: Moderate to Severe, SR 10+: Severe
+                                    if sr_max >= 10 or 'Severe' in level:
+                                        color = '#dc3545'  # 빨간색
+                                    elif sr_max >= 5 or 'Moderate to Severe' in level:
+                                        color = '#ffc107'  # 노란색
+                                    elif sr_max >= 4 or 'Moderate' in level:
+                                        color = '#0dcaf0'  # 연한 파란색
+                                    else:  # SR 1-3
+                                        color = '#17a2b8'  # 파란색
+                                    
+                                    return f'<strong style="color: {color} !important; font-weight: 700 !important;">[SR 기준] {match.group(0)}</strong>'
+                                cell_html = re.sub(sr_turbulence_pattern, highlight_sr_turbulence, cell)
+                            
+                            # ASC 차트 값 강조 (예: "ASC Turbulence Chart 상 연한 파란색(MOD) 영역", "빨간색(SEV) 영역")
+                            # 중복 방지: "ASC Turbulence Chart 상" 포함 패턴을 먼저 처리하고, 이미 처리된 부분은 제외
+                            # 1단계: "ASC Turbulence Chart 상" 포함 패턴 처리 (전체를 한 번에 강조)
+                            asc_full_patterns = [
+                                (r'ASC Turbulence Chart 상\s+빨간색\s*\(SEV\)', '#dc3545'),
+                                (r'ASC Turbulence Chart 상\s+노란색\s*\(MODtoSEV\)', '#ffc107'),
+                                (r'ASC Turbulence Chart 상\s+연한 파란색\s*\((MOD|LGT)\)', '#0dcaf0'),
+                            ]
+                            
+                            for pattern, color in asc_full_patterns:
+                                def highlight_full_asc(match):
+                                    return f'<strong style="color: {color} !important; font-weight: 700 !important;">[ASC 차트] {match.group(0)}</strong>'
+                                cell_html = re.sub(pattern, highlight_full_asc, cell_html)
+                            
+                            # 2단계: "ASC Turbulence Chart 상" 없이 색상만 있는 패턴 처리
+                            # 이미 "[ASC 차트]" 태그가 없는 경우만 처리 (lookbehind 사용 안 함)
+                            # "[ASC 차트]"가 이미 있으면 스킵 (이미 처리된 경우)
+                            # 더 안전하게: "<strong" 태그로 감싸지 않은 색상 패턴만 찾기
+                            if '[ASC 차트]' not in cell_html:
+                                # 색상 패턴을 찾되, 이미 강조 태그 안에 있는 것은 제외
+                                asc_color_patterns = [
+                                    (r'빨간색\s*\(SEV\)', '#dc3545'),
+                                    (r'노란색\s*\(MODtoSEV\)', '#ffc107'),
+                                    (r'연한 파란색\s*\((MOD|LGT)\)', '#0dcaf0'),
+                                ]
+                                
+                                for pattern, color in asc_color_patterns:
+                                    # 모든 매칭을 찾아서, 이미 강조 태그 안에 있지 않은 것만 처리
+                                    matches = list(re.finditer(pattern, cell_html))
+                                    for match in reversed(matches):  # 뒤에서부터 처리하여 인덱스 변경 방지
+                                        start, end = match.span()
+                                        # 앞부분을 확인하여 이미 강조 태그 안에 있는지 체크
+                                        before = cell_html[:start]
+                                        # "<strong"가 있고 "</strong>"가 없으면 이미 강조 태그 안에 있음
+                                        last_strong_start = before.rfind('<strong')
+                                        last_strong_end = before.rfind('</strong>')
+                                        if last_strong_start == -1 or (last_strong_end != -1 and last_strong_end > last_strong_start):
+                                            # 강조 태그 밖에 있으면 처리
+                                            replacement = f'<strong style="color: {color} !important; font-weight: 700 !important;">[ASC 차트] {match.group(0)}</strong>'
+                                            cell_html = cell_html[:start] + replacement + cell_html[end:]
+                        
+                        # 모든 셀에 기본 인라인 스타일 적용
+                        base_style = "padding: 6px 8px !important; vertical-align: top !important; border: 1px solid #dee2e6 !important; font-size: 13px !important; line-height: 1.0 !important; white-space: normal !important; word-wrap: break-word !important; word-break: break-word !important; overflow-wrap: break-word !important; overflow: visible !important; text-overflow: clip !important; box-sizing: border-box !important; max-width: 100% !important;"
+                        
+                        # 내용 및 근거 열은 더 넓게 (강제 줄바꿈)
+                        # 반응형을 위해 고정 너비 제거
+                        # base_style에 이미 line-height: 1.3이 있으므로 중복 제거
+                        if is_content_cell:
+                            cell_style = base_style + " hyphens: auto !important; -webkit-hyphens: auto !important; -moz-hyphens: auto !important; display: table-cell !important;"
+                            table_html.append(f'<td class="content-cell" style="{cell_style}">{cell_html}</td>')
+                        else:
+                            # 다른 열들은 자동 너비 (table-layout: auto 사용)
+                            table_html.append(f'<td style="{base_style} display: table-cell !important;">{cell_html}</td>')
+                    table_html.append('</tr>')
+        else:
+            # 테이블 종료
+            if in_table:
+                # 테이블 컨테이너 공통 스타일 (중복 제거)
+                table_container_style = 'overflow-x: auto !important; overflow-y: visible !important; width: 100% !important; max-width: 100% !important; display: block !important;'
+                table_style = 'font-size: 14px !important; width: 100% !important; max-width: 100% !important; border-collapse: separate !important; border-spacing: 0 !important; table-layout: auto !important; border: 1px solid #dee2e6 !important; display: table !important; background-color: white !important;'
+                result_lines.append(f'<div style="margin: 0px 0 !important; {table_container_style}"><table style="{table_style}">')
+                result_lines.extend(table_html)
+                result_lines.append('</table></div>')
+                in_table = False
+                table_html = []
+                header_processed = False
+            
+            # 리스트 변환 (* 항목 → <li>항목</li>)
+            if line.strip().startswith('*'):
+                content = line.strip()[1:].strip()
+                result_lines.append(f'<li class="mb-2">{content}</li>')
+            elif line.strip().startswith('-'):
+                content = line.strip()[1:].strip()
+                result_lines.append(f'<li class="mb-2">{content}</li>')
+            elif line.strip():
+                result_lines.append(line)
+            else:
+                result_lines.append('<br>')
+    
+    # 마지막 테이블 처리
+    if in_table:
+        # 테이블 컨테이너 공통 스타일 (중복 제거)
+        table_container_style = 'overflow-x: auto !important; overflow-y: visible !important; width: 100% !important; max-width: 100% !important; display: block !important;'
+        table_style = 'font-size: 14px !important; width: 100% !important; max-width: 100% !important; border-collapse: separate !important; border-spacing: 0 !important; table-layout: auto !important; border: 1px solid #dee2e6 !important; display: table !important; background-color: white !important;'
+        result_lines.append(f'<div style="margin: 0px 0 !important; {table_container_style}"><table style="{table_style}">')
+        result_lines.extend(table_html)
+        result_lines.append('</table></div>')
+    
+    html = '\n'.join(result_lines)
+    
+    # 리스트 래핑 (<li>가 연속으로 나오면 <ul>로 감싸기) - 인라인 스타일 추가
+    html = re.sub(r'(<li[^>]*>.*?</li>(?:\s*<li[^>]*>.*?</li>)*)', r'<ul class="list-unstyled ms-3" style="padding-left: 25px !important; margin: 15px 0 !important;">\1</ul>', html, flags=re.DOTALL)
+    
+    # 리스트 항목 스타일 개선
+    html = re.sub(r'<li class="mb-2">', r'<li class="mb-2" style="margin-bottom: 10px !important; font-size: 14px !important; line-height: 1.7 !important;">', html)
+    
+    # 강조 표시 (**텍스트** → <strong>텍스트</strong>) - 색상은 CSS에서 처리
+    html = re.sub(r'\*\*(.+?)\*\*', r'<strong style="font-weight: 600 !important;">\1</strong>', html)
+    
+    # 시간 형식 강조 (예: 21:30Z, 08:26Z) - 인라인 스타일 추가
+    html = re.sub(r'(\d{2}:\d{2}Z)', r'<span class="badge bg-secondary" style="font-family: \'Courier New\', monospace !important; font-weight: 600 !important; font-size: 0.9em !important; padding: 5px 10px !important; border-radius: 4px !important;">\1</span>', html)
+    
+    return html
+
+@app.route('/ats_validator', methods=['GET', 'POST'])
+def ats_validator():
+    """ATS FPL Route Validator + 터뷸런스 분석 통합 버전"""
+    from src.ats_route_extractor import (
+        extract_ofp_route_from_page,
+        extract_ats_fpl_route_from_page,
+        compare_routes,
+        is_valid_ofp_route,
+        extract_route_from_docpack,
+    )
+    import pdfplumber
+    import re
+    import shutil
+    
+    if request.method == 'GET':
+        return render_template('ats_validator.html')
+    
+    # POST 요청: 파일 업로드 처리
+    if 'file' not in request.files:
+        flash('파일이 선택되지 않았습니다.', 'error')
+        return redirect(url_for('ats_validator'))
+    
+    file = request.files['file']
+    if file.filename == '':
+        flash('파일이 선택되지 않았습니다.', 'error')
+        return redirect(url_for('ats_validator'))
+    
+    if not file.filename.lower().endswith('.pdf'):
+        flash('PDF 파일만 업로드 가능합니다.', 'error')
+        return redirect(url_for('ats_validator'))
+    
+    # 터뷸런스 분석 결과 변수
+    turbulence_analysis = None
+    flight_data = None
+    etd_str = None
+    takeoff_time_str = None
+    eta_str = None
+    
     try:
-        # ATSplanvalidation 디렉토리 경로
-        ats_dir = Path(__file__).parent / 'ATSplanvalidation'
+        # 업로드 파일 저장 (최신 3개 유지)
+        ensure_files_cleaned()
+        filename = secure_filename(file.filename)
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        request_id = str(uuid.uuid4())[:8]
+        filename = f"{timestamp}_{request_id}_{filename}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        cleanup_files(app.config['UPLOAD_FOLDER'], max_files=3)
         
-        # run.py 파일 존재 확인
-        run_py = ats_dir / 'run.py'
-        if not run_py.exists():
-                return f'''
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>ATS FPL Validator 오류</title>
-                    <style>
-                        body {{
-                            font-family: Arial, sans-serif;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            height: 100vh;
-                            margin: 0;
-                            background: #f8f9fa;
-                        }}
-                        .error-container {{
-                            text-align: center;
-                            padding: 40px;
-                            background: white;
-                            border-radius: 10px;
-                            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <div class="error-container">
-                        <h2 style="color: #dc3545;">❌ 오류</h2>
-                        <p>ATS FPL Validator 실행 스크립트(run.py)를 찾을 수 없습니다.</p>
-                        <p><code>{run_py}</code></p>
-                        <p><a href="/">홈으로 돌아가기</a></p>
-                    </div>
-                </body>
-                </html>
-                ''', 404
-        
-        # 가상환경 Python 경로 확인 (run.py와 동일한 로직)
-        venv_python = ats_dir / ".venv" / "bin" / "python"
-        if not venv_python.exists():
-            # python3도 확인
-            venv_python = ats_dir / ".venv" / "bin" / "python3"
-            if not venv_python.exists():
-                # Windows용 경로도 확인
-                venv_python = ats_dir / ".venv" / "Scripts" / "python.exe"
-                if not venv_python.exists():
-                    # 가상환경이 없으면 시스템 Python 사용
-                    venv_python = Path(sys.executable)
-                    logger.warning(f"가상환경 Python을 찾을 수 없어 시스템 Python 사용: {venv_python}")
-        
-        # app.py 파일 존재 확인
-        app_py = ats_dir / 'app.py'
-        if not app_py.exists():
-                logger.error(f"app.py 파일을 찾을 수 없습니다: {app_py}")
-                return f'''
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>ATS FPL Validator 오류</title>
-                    <style>
-                        body {{
-                            font-family: Arial, sans-serif;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            height: 100vh;
-                            margin: 0;
-                            background: #f8f9fa;
-                        }}
-                        .error-container {{
-                            text-align: center;
-                            padding: 40px;
-                            background: white;
-                            border-radius: 10px;
-                            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <div class="error-container">
-                        <h2 style="color: #dc3545;">❌ 오류</h2>
-                        <p>ATS FPL Validator 앱 파일(app.py)을 찾을 수 없습니다.</p>
-                        <p><code>{app_py}</code></p>
-                        <p>ATSplanvalidation 폴더에 app.py 파일이 필요합니다.</p>
-                        <p><a href="/">홈으로 돌아가기</a></p>
-                    </div>
-                </body>
-                </html>
-                ''', 404
-        
-        # run.py를 직접 실행하여 Streamlit 앱을 백그라운드로 실행
-        # run.py가 가상환경을 자동으로 찾아서 streamlit run app.py를 실행합니다
-        # 포트는 환경변수나 Streamlit 설정으로 지정
-        def run_streamlit():
-                # sleep 제거 - 바로 실행
-                # run.py를 직접 실행하되, 포트를 환경변수로 전달
-                # run.py는 가상환경 Python을 자동으로 찾아서 streamlit을 실행합니다
-                env = dict(os.environ)
-                env['STREAMLIT_SERVER_PORT'] = str(streamlit_port)
-                env['STREAMLIT_SERVER_HEADLESS'] = 'true'
-                env['STREAMLIT_SERVER_ADDRESS'] = 'localhost'
-                env['PYTHONUNBUFFERED'] = '1'
+        try:
+            # 1. 터뷸런스 분석 실행 (flightplanextractor.py)
+            try:
+                from flightplanextractor import extract_flight_data_from_pdf, analyze_turbulence_with_gemini
                 
-                # 로그 파일 경로
-                log_dir = ats_dir / 'logs'
-                log_dir.mkdir(exist_ok=True)
-                log_file = log_dir / 'streamlit.log'
+                logger.info("터뷸런스 분석 시작...")
+                flight_data = extract_flight_data_from_pdf(filepath, save_temp=False)
                 
-                # Streamlit 실행 (오류 확인을 위해 로그 파일에 출력)
-                try:
-                    with open(log_file, 'a') as f:
-                        f.write(f"\n{'='*50}\n")
-                        f.write(f"Streamlit 시작 시도: {datetime.now()}\n")
-                        f.write(f"Python: {venv_python}\n")
-                        f.write(f"Python 존재: {venv_python.exists()}\n")
-                        f.write(f"작업 디렉토리: {ats_dir}\n")
-                        f.write(f"포트: {streamlit_port}\n")
-                        f.write(f"{'='*50}\n")
+                if flight_data:
+                    # ETD, TAXI TIME, ETA 추출
+                    import pdfplumber as pdfplumber_temp
+                    departure_airport = None
+                    arrival_airport = None
                     
-                    # streamlit 실행 파일 직접 사용 시도
-                    streamlit_cmd = ats_dir / ".venv" / "bin" / "streamlit"
-                    if streamlit_cmd.exists():
-                        # 가상환경의 streamlit 직접 실행
-                        cmd = [str(streamlit_cmd), "run", "app.py", 
-                               "--server.port", str(streamlit_port), 
-                               "--server.headless", "true",
-                               "--server.address", "localhost"]
-                        with open(log_file, 'a') as f:
-                            f.write(f"streamlit 직접 실행: {cmd}\n")
-                    else:
-                        # Python으로 streamlit 모듈 실행
-                        cmd = [str(venv_python), "-m", "streamlit", "run", "app.py", 
-                               "--server.port", str(streamlit_port), 
-                               "--server.headless", "true",
-                               "--server.address", "localhost"]
-                        with open(log_file, 'a') as f:
-                            f.write(f"Python으로 streamlit 실행: {cmd}\n")
+                    with pdfplumber_temp.open(filepath) as pdf_temp:
+                        full_text_temp = ""
+                        for page in pdf_temp.pages:
+                            page_text = page.extract_text()
+                            if page_text:
+                                full_text_temp += page_text + "\n"
                     
-                    # 로그 파일을 append 모드로 열기 (프로세스가 종료될 때까지 열어둠)
-                    log_file_handle = open(log_file, 'a', encoding='utf-8', buffering=1)  # line buffering
-                    process = subprocess.Popen(
-                        cmd,
-                        cwd=str(ats_dir),
-                        stdout=log_file_handle,
-                        stderr=subprocess.STDOUT,
-                        env=env,
-                        start_new_session=True  # 새 세션에서 시작하여 부모 프로세스 종료 시 영향 받지 않도록
+                    # ETD 추출 (공항 코드 포함)
+                    etd_pattern = r'ETD\s+([A-Z]{4})\s+(\d{4})Z'
+                    etd_match = re.search(etd_pattern, full_text_temp)
+                    if etd_match:
+                        departure_airport = etd_match.group(1)
+                        etd_str = etd_match.group(2) + 'Z'
+                    
+                    # 이륙 시간 계산 (ETD + 20분)
+                    if etd_str:
+                        try:
+                            etd_hour = int(etd_str[:2])
+                            etd_minute = int(etd_str[2:4])
+                            # 날짜는 오늘 날짜 사용 (시간 계산에만 사용되므로 날짜는 중요하지 않음)
+                            today = datetime.now()
+                            etd_time = datetime(today.year, today.month, today.day, etd_hour, etd_minute)
+                            takeoff_time = etd_time + timedelta(minutes=20)
+                            takeoff_time_str = takeoff_time.strftime('%H%M') + 'Z'
+                        except Exception as e:
+                            logger.warning(f"이륙 시간 계산 오류: {e}")
+                    
+                    # ETA 추출 (공항 코드 포함)
+                    eta_pattern = r'ETA\s+([A-Z]{4})\s+(\d{4})Z'
+                    eta_match = re.search(eta_pattern, full_text_temp)
+                    if eta_match:
+                        arrival_airport = eta_match.group(1)
+                        eta_str = eta_match.group(2) + 'Z'
+                    
+                    # TURB/CB INFO 추출
+                    turb_cb_info = []
+                    if 'TURB/CB INFO' in full_text_temp.upper():
+                        lines_text = full_text_temp.split('\n')
+                        for i, line in enumerate(lines_text):
+                            if 'TURB/CB INFO' in line.upper():
+                                turb_cb_info.append(line.strip())
+                                for j in range(i + 1, min(i + 10, len(lines_text))):
+                                    next_line = lines_text[j].strip()
+                                    if not next_line:
+                                        if j + 1 < len(lines_text) and not lines_text[j + 1].strip():
+                                            break
+                                        continue
+                                    if next_line.startswith(('6.', '7.', '8.', '9.', '---', '===')):
+                                        break
+                                    if any(keyword in next_line.upper() for keyword in ['CAUTION', 'CB', 'TURB', 'SIG WX', 'TURBULENCE', 'CHART']):
+                                        turb_cb_info.append(next_line)
+                                    elif len(turb_cb_info) <= 4:
+                                        turb_cb_info.append(next_line)
+                                break
+                    
+                    # TAF 데이터 추출
+                    taf_data = {'departure': None, 'arrival': None, 'alternate': None}
+                    if 'WEATHER BRIEFING' in full_text_temp.upper():
+                        weather_briefing_match = re.search(r'WEATHER BRIEFING.*?(-{5,}\s*DEPARTURE WEATHER\s*-{5,}.*?)(?:-{5,}\s*ARRIVAL WEATHER\s*-{5,}.*?)(?:-{5,}\s*ALTERNATE WEATHER\s*-{5,}.*?)(?:-{5,}\s*END OF WEATHER BRIEFING|-{5,}\s*ROUTE TO ALTN|\Z)', full_text_temp, re.DOTALL)
+                        if weather_briefing_match:
+                            weather_briefing_section = weather_briefing_match.group(0)
+                            dep_match = re.search(r'DEPARTURE WEATHER\s*-{5,}\s*(.*?)(?:-{5,}\s*ARRIVAL WEATHER|\Z)', weather_briefing_section, re.DOTALL)
+                            if dep_match:
+                                taf_data['departure'] = dep_match.group(1).strip()
+                            arr_match = re.search(r'ARRIVAL WEATHER\s*-{5,}\s*(.*?)(?:-{5,}\s*ALTERNATE WEATHER|\Z)', weather_briefing_section, re.DOTALL)
+                            if arr_match:
+                                taf_data['arrival'] = arr_match.group(1).strip()
+                            alt_match = re.search(r'ALTERNATE WEATHER\s*-{5,}\s*(.*?)(?:-{5,}\s*END OF WEATHER BRIEFING|-{5,}\s*ROUTE TO ALTN|\Z)', weather_briefing_section, re.DOTALL)
+                            if alt_match:
+                                taf_data['alternate'] = alt_match.group(1).strip()
+                    
+                    # Gemini API를 사용한 터뷸런스 분석
+                    logger.info("Gemini API를 사용한 터뷸런스 분석 시작...")
+                    turbulence_analysis = analyze_turbulence_with_gemini(
+                        filepath, flight_data, etd_str, takeoff_time_str, eta_str, turb_cb_info, taf_data,
+                        departure_airport, arrival_airport
                     )
-                    logger.info(f"Streamlit 프로세스 시작: PID {process.pid}")
-                    log_file_handle.write(f"프로세스 시작됨: PID {process.pid}\n")
-                    log_file_handle.flush()  # 즉시 파일에 쓰기
-                    # 파일 핸들을 닫지 않음 (프로세스가 종료될 때까지 열어둠)
-                except Exception as e:
-                    logger.error(f"Streamlit 시작 실패: {e}")
-                    import traceback
-                    with open(log_file, 'a') as f:
-                        f.write(f"오류: {e}\n")
-                        f.write(traceback.format_exc())
-        
-        # 별도 스레드에서 실행
-        thread = threading.Thread(target=run_streamlit, daemon=True)
-        thread.start()
-        
-        # POST 요청일 때는 즉시 성공 응답 반환 (Streamlit 앱은 백그라운드에서 시작됨)
-        if request.method == 'POST':
-            from flask import jsonify
-            # Streamlit 앱이 시작되는 데 시간이 걸리므로 즉시 응답
-            # JavaScript에서 준비 상태를 폴링하여 확인
-            # is_local 플래그 추가하여 로컬 환경임을 표시
-            return jsonify({'status': 'success', 'url': streamlit_url, 'is_local': True}), 200
+                    logger.info("터뷸런스 분석 완료")
+            except Exception as e:
+                logger.warning(f"터뷸런스 분석 중 오류 발생 (계속 진행): {e}", exc_info=True)
+                turbulence_analysis = None
+            
+            # 2. ATS FPL Route Validator 실행
+            # PDF 파일 읽기 및 처리
+            with pdfplumber.open(filepath) as pdf:
+                total_pages = len(pdf.pages)
+                
+                # 전체 PDF 텍스트 추출
+                all_text = ""
+                page_texts = []
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    page_texts.append(page_text if page_text else "")
+                    if page_text:
+                        all_text += page_text + "\n"
+                
+                # OFP route 추출: Aviator OFP는 본경로가 항상 2페이지에 있음. ROUTE TO ALTN은 대체경로로 OFP가 아님.
+                ofp_route = None
+                ofp_page_num = None
+                # 1) 2페이지 우선 (Aviator flight plan에서 OFP 본경로는 거의 항상 2페이지)
+                if total_pages >= 2 and page_texts[1]:
+                    ofp_route = extract_ofp_route_from_page(page_texts[1])
+                    if ofp_route and is_valid_ofp_route(ofp_route):
+                        ofp_page_num = 2
+                # 2) 없으면 "DIST LATITUDE" / "DIST. LATITUDE" 있는 다른 페이지에서만 추출
+                if not ofp_route:
+                    flight_plan_page_indices = [i for i, pt in enumerate(page_texts) if pt and re.search(r'\bDIST\s*\.?\s*LATITUDE\b', pt or '', re.IGNORECASE) and i != 1]
+                    for page_idx in flight_plan_page_indices[:3]:
+                        page_text = page_texts[page_idx]
+                        if page_text:
+                            ofp_route = extract_ofp_route_from_page(page_text)
+                            if ofp_route and is_valid_ofp_route(ofp_route):
+                                ofp_page_num = page_idx + 1
+                                break
+                        ofp_route = None
+                if not ofp_route:
+                    ofp_route = extract_route_from_docpack(all_text)
+                    if ofp_route:
+                        ofp_page_num = "DocPack 전체"
+                if not ofp_route:
+                    max_pages_to_check = min(5, total_pages)
+                    for page_idx in range(max_pages_to_check):
+                        if page_idx == 1:
+                            continue
+                        page_text = page_texts[page_idx]
+                        if page_text:
+                            ofp_route = extract_ofp_route_from_page(page_text)
+                            if ofp_route and is_valid_ofp_route(ofp_route):
+                                ofp_page_num = page_idx + 1
+                                break
+                # 마지막 폴백: app의 extract_route_from_page2 (여러 페이지·DIST 유연 패턴 시도)
+                if not ofp_route:
+                    ofp_route = extract_route_from_page2(filepath)
+                    if ofp_route and is_valid_ofp_route(ofp_route):
+                        ofp_page_num = "PDF 다중페이지 추출"
+                
+                # OFP 추출 실패 시 사유 (사용자 안내용)
+                ofp_route_fail_reason = None
+                if not ofp_route and total_pages > 0:
+                    has_dist = any(re.search(r'\bDIST\s*\.?\s*LATITUDE\b', pt or '', re.IGNORECASE) for pt in page_texts)
+                    has_text = any((pt or '').strip() for pt in page_texts)
+                    if not has_text:
+                        ofp_route_fail_reason = "PDF에서 텍스트를 추출할 수 없습니다(이미지/스캔본일 수 있음)."
+                    elif not has_dist and total_pages == 1:
+                        ofp_route_fail_reason = "단일 페이지 PDF이며, 비행계획 테이블(DIST LATITUDE) 형식을 찾지 못했습니다."
+                    elif not has_dist:
+                        ofp_route_fail_reason = "어떤 페이지에서도 비행계획 테이블(DIST LATITUDE) 또는 공항코드+항로 패턴을 찾지 못했습니다."
+                    else:
+                        ofp_route_fail_reason = "항로 블록 형식이 일반 OFP와 다르거나, ROUTE TO ALTN 이전에 본경로가 없습니다."
+                
+                # ATS FPL route 추출
+                ats_route = None
+                ats_page_num = None
+                for i, page_text in enumerate(page_texts):
+                    if page_text and ('COPY OF ATS FPL' in page_text.upper() or 'ATS FPL' in page_text.upper()):
+                        ats_route = extract_ats_fpl_route_from_page(page_text)
+                        if ats_route:
+                            ats_page_num = i + 1
+                            break
+                
+                # 비교 결과
+                comparison = None
+                if ofp_route and ats_route:
+                    comparison = compare_routes(ofp_route, ats_route)
+                
+                # 터뷸런스 분석 결과를 HTML로 변환 (마크다운 → HTML)
+                turbulence_analysis_html = None
+                if turbulence_analysis:
+                    logger.info(f"터뷸런스 분석 원본 (처음 500자): {turbulence_analysis[:500] if len(turbulence_analysis) > 500 else turbulence_analysis}")
+                    turbulence_analysis_html = convert_markdown_to_html(turbulence_analysis)
+                    logger.info(f"터뷸런스 분석 HTML 변환 완료 (처음 500자): {turbulence_analysis_html[:500] if len(turbulence_analysis_html) > 500 else turbulence_analysis_html}")
+                    logger.info(f"인라인 스타일 개수: {turbulence_analysis_html.count('style=') if turbulence_analysis_html else 0}")
+                    # HTML 태그가 포함되어 있는지 확인
+                    if turbulence_analysis_html and ('<h3>' in turbulence_analysis_html or '<table>' in turbulence_analysis_html):
+                        logger.info("✅ HTML 변환 성공: HTML 태그가 포함되어 있습니다.")
+                    else:
+                        logger.warning("⚠️ HTML 변환 실패: HTML 태그가 없습니다. 원본 텍스트가 반환되었을 수 있습니다.")
+                        # HTML 태그가 없으면 원본을 그대로 사용 (마크다운으로 표시)
+                        turbulence_analysis_html = turbulence_analysis_html or turbulence_analysis
+                
+                return render_template('ats_validator.html',
+                                 total_pages=total_pages,
+                                 ofp_route=ofp_route,
+                                 ofp_page_num=ofp_page_num,
+                                 ofp_route_fail_reason=ofp_route_fail_reason,
+                                 ats_route=ats_route,
+                                 ats_page_num=ats_page_num,
+                                 comparison=comparison,
+                                 page_texts=page_texts[:5] if not ofp_route or not ats_route else None,
+                                 turbulence_analysis=turbulence_analysis_html,
+                                 flight_data=flight_data,
+                                 etd_str=etd_str,
+                                 takeoff_time_str=takeoff_time_str,
+                                 eta_str=eta_str)
+        finally:
+            pass
         
     except Exception as e:
-            logger.error(f"Streamlit 앱 시작 실패: {e}")
-            # POST 요청일 때는 JSON 응답
-            if request.method == 'POST':
-                return {'status': 'error', 'message': str(e)}, 500
-            # GET 요청일 때는 HTML 응답
-            return f'''
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>ATS FPL Validator 오류</title>
-                <style>
-                    body {{
-                        font-family: Arial, sans-serif;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        height: 100vh;
-                        margin: 0;
-                        background: #f8f9fa;
-                    }}
-                    .error-container {{
-                        text-align: center;
-                        padding: 40px;
-                        background: white;
-                        border-radius: 10px;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="error-container">
-                    <h2 style="color: #dc3545;">❌ 오류</h2>
-                    <p>ATS FPL Validator 시작 실패: {str(e)}</p>
-                    <p><a href="/">홈으로 돌아가기</a></p>
-                </div>
-            </body>
-            </html>
-            ''', 500
+        logger.error(f"ATS Validator 오류: {e}", exc_info=True)
+        flash(f'오류가 발생했습니다: {str(e)}', 'error')
+        return redirect(url_for('ats_validator'))
+
+
+@app.route('/validate_ats_fpl', methods=['GET', 'POST'])
+def validate_ats_fpl():
+    """ATS FPL Validator (레거시 호환 - Flask 통합 버전으로 리다이렉트)"""
+    # 새 Flask 통합 버전으로 리다이렉트
+    if request.method == 'POST':
+        from flask import jsonify
+        return jsonify({
+            'status': 'success',
+            'url': url_for('ats_validator', _external=True),
+            'is_local': True
+        }), 200
     
-    # Streamlit 앱 URL로 리다이렉트하는 HTML 반환 (새 탭에서 열림)
-    return f'''
-    <!DOCTYPE html>
-    <html lang="ko">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="refresh" content="2;url={streamlit_url}">
-        <title>ATS FPL Validator 시작 중...</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-        <style>
-            body {{
-                margin: 0;
-                padding: 0;
-                font-family: Arial, sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-            }}
-            .container {{
-                text-align: center;
-            }}
-            .spinner {{
-                border: 4px solid rgba(255, 255, 255, 0.3);
-                border-top: 4px solid white;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                animation: spin 1s linear infinite;
-                margin: 20px auto;
-            }}
-            @keyframes spin {{
-                0% {{ transform: rotate(0deg); }}
-                100% {{ transform: rotate(360deg); }}
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h2>🚀 ATS FPL Validator를 시작합니다...</h2>
-            <div class="spinner"></div>
-            <p>잠시 후 새 탭에서 자동으로 열립니다.</p>
-            <p><a href="{streamlit_url}" target="_blank" style="color: white; text-decoration: underline;">여기를 클릭하여 바로 이동</a></p>
-        </div>
-        <script>
-            // Streamlit 앱이 준비될 때까지 대기 후 새 탭에서 열기
-            let attempts = 0;
-            const maxAttempts = 60; // 최대 60회 시도 (약 3초)
-            const checkInterval = 50; // 50ms마다 체크
-            
-            function checkStreamlitReady() {{
-                attempts++;
-                fetch('{streamlit_url}', {{ method: 'HEAD', mode: 'no-cors' }})
-                    .then(() => {{
-                        // Streamlit 앱이 준비되었으면 새 탭에서 열기
-                        window.open('{streamlit_url}', '_blank');
-                        // 현재 페이지는 그대로 유지
-                        document.querySelector('.container').innerHTML = 
-                            '<h2>✅ ATS FPL Validator가 시작되었습니다!</h2>' +
-                            '<p>새 탭에서 앱이 열렸습니다.</p>' +
-                            '<p><a href="{streamlit_url}" target="_blank" style="color: white; text-decoration: underline;">여기를 클릭하여 다시 열기</a></p>' +
-                            '<p><a href="/" style="color: white; text-decoration: underline;">홈으로 돌아가기</a></p>';
-                    }})
-                    .catch(() => {{
-                        if (attempts < maxAttempts) {{
-                            // 아직 준비되지 않았으면 50ms 후 다시 시도
-                            setTimeout(checkStreamlitReady, checkInterval);
-                        }} else {{
-                            // 타임아웃 시에도 새 탭에서 열기 시도
-                            window.open('{streamlit_url}', '_blank');
-                            document.querySelector('.container').innerHTML = 
-                                '<h2>⚠️ ATS FPL Validator 시작 중...</h2>' +
-                                '<p>앱이 아직 시작 중일 수 있습니다. 잠시 후 새 탭을 확인해주세요.</p>' +
-                                '<p><a href="{streamlit_url}" target="_blank" style="color: white; text-decoration: underline;">여기를 클릭하여 열기</a></p>' +
-                                '<p><a href="/" style="color: white; text-decoration: underline;">홈으로 돌아가기</a></p>';
-                        }}
-                    }});
-            }}
-            
-            // Streamlit 앱 준비 상태 확인 시작 (1초 후 시작하여 프로세스가 시작될 시간을 줌)
-            setTimeout(checkStreamlitReady, 1000);
-        </script>
-    </body>
-    </html>
-    '''
+    return redirect(url_for('ats_validator'))
 
 # ================== 지도용 NOTAM 캐시 주입(분석 결과 재사용) ==================
 # _index_notams_by_airport 함수는 위에서 이미 정의됨 (중복 제거)
@@ -1067,6 +1187,12 @@ def override_airport_notams():
         })
     except Exception as e:
         return jsonify({'error': f'캐시 주입 실패: {str(e)}'}), 500
+
+@app.route('/upload', methods=['GET'])
+def upload_redirect():
+    """GET /upload 시 메인 페이지로 이동 (브라우저가 /upload로 리다이렉트된 경우·새로고침 시 로딩 루프 방지)"""
+    return redirect(url_for('index'))
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -1110,12 +1236,12 @@ def upload_file():
         processing_times = {}
         if 'file' not in request.files:
             flash('파일이 선택되지 않았습니다.')
-            return redirect(request.url)
+            return redirect(url_for('index'))
         
         file = request.files['file']
         if file.filename == '':
             flash('파일이 선택되지 않았습니다.')
-            return redirect(request.url)
+            return redirect(url_for('index'))
         
         if file and file.filename and allowed_file(file.filename):
             # 파일 저장 시간 측정
@@ -1128,8 +1254,14 @@ def upload_file():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
-            # 업로드 파일 정리 (최신 2개만 유지 - 용량 절감 + 이전 파일 확인 가능)
-            cleanup_files(app.config['UPLOAD_FOLDER'], max_files=2)
+            # 업로드 직후 파일 크기 확인 (빈 파일 또는 업로드 실패 방지)
+            if os.path.getsize(filepath) < 100:
+                logger.error(f"업로드된 파일 크기가 비정상적으로 작음: {filepath}, size={os.path.getsize(filepath)}")
+                flash('업로드된 파일이 비어 있거나 손상된 것 같습니다. 다시 업로드해 주세요.')
+                return redirect(url_for('index'))
+            
+            # 업로드 파일 정리 (최신 3개만 유지 - 용량 절감 + 이전 파일 확인 가능)
+            cleanup_files(app.config['UPLOAD_FOLDER'], max_files=3)
             
             processing_times['file_save'] = (datetime.now() - file_save_start).total_seconds()
             
@@ -1146,6 +1278,8 @@ def upload_file():
             else:
                 logger.debug("두 번째 페이지에서 route를 찾을 수 없음 (skip)")
             
+            # Flight plan waypoint 좌표는 아래에서 text 기준으로 추출 (PDF 재오픈 없이 처리 시간 절감)
+            
             # split 파일명 생성
             base_name = os.path.splitext(os.path.basename(filepath))[0]
             split_filename = f"{base_name}_split.txt"
@@ -1159,6 +1293,53 @@ def upload_file():
                 flash('PDF에서 텍스트를 추출할 수 없습니다.')
                 return redirect(url_for('index'))
             
+            # Flight plan waypoint 좌표 추출 (이미 있는 text만 사용, PDF 재오픈 없음 → 처리 시간 절감)
+            flight_plan_waypoints = []
+            try:
+                from flightplanextractor import extract_flight_plan_waypoints_from_text
+                waypoint_rows = extract_flight_plan_waypoints_from_text(text)
+                for row in waypoint_rows:
+                    flight_plan_waypoints.append({
+                        "ident": (row.get("Waypoint") or "").strip().upper(),
+                        "lat": float(row["lat"]),
+                        "lon": float(row["lon"]),
+                    })
+                if flight_plan_waypoints:
+                    logger.info(f"Flight plan waypoint 좌표 추출: {len(flight_plan_waypoints)}개")
+            except Exception as e:
+                logger.warning(f"Flight plan 좌표 추출 실패: {e}")
+            
+            # Flight plan 요약 분석 (Callsign, PAX, MEL/CDL, 연료, 중량, ETD/ETA 등)
+            flight_plan_summary_items = []
+            flight_plan_summary_items_before = []
+            flight_plan_summary_items_after = []
+            flight_plan_fuel_time_table = []
+            flight_plan_weight_table = []
+            flight_plan_report_ko = ""
+            try:
+                from src.flight_plan_analyzer import (
+                    extract_flight_plan_summary,
+                    get_flight_plan_summary_display_items,
+                    get_fuel_time_table,
+                    get_weight_table,
+                )
+                summary = extract_flight_plan_summary(text)
+                flight_plan_summary_items = get_flight_plan_summary_display_items(summary)
+                # 연료/무게 테이블 이전에 올 항목 (Callsign ~ 평균 WIND/TEMP)
+                _fp_before_keys = {
+                    "flight_plan_number", "callsign_line", "pax_line", "mel_cdl",
+                    "trip_fuel_increase_2000lbs", "dispatch_note", "turb_cb",
+                    "route_fuel_consumption", "cost_index_value", "apms", "avg_wind_temp",
+                }
+                flight_plan_summary_items_before = [i for i in flight_plan_summary_items if i.get("key") in _fp_before_keys]
+                flight_plan_summary_items_after = [i for i in flight_plan_summary_items if i.get("key") not in _fp_before_keys]
+                flight_plan_fuel_time_table = get_fuel_time_table(summary)
+                flight_plan_weight_table = get_weight_table(summary)
+                if any(item.get("value") and item["value"] != "—" for item in flight_plan_summary_items):
+                    logger.info(f"Flight plan 요약 추출: {len([i for i in flight_plan_summary_items if i.get('value') and i['value'] != '—'])}개 항목")
+            except Exception as e:
+                logger.warning(f"Flight plan 요약 추출 실패: {e}")
+            
             # split 파일명은 convert_pdf_to_text에서 자동 생성됨
             
             # NOTAM 필터링 (한 번만 실행)
@@ -1167,10 +1348,15 @@ def upload_file():
             takeoff_infos = notam_filter.extract_takeoff_performance_info(text)
             processing_times['notam_filtering'] = (datetime.now() - filtering_start).total_seconds()
             logger.debug(f"NOTAM 필터링: {len(notams)}개, {processing_times['notam_filtering']:.2f}초")
+            if not notams and text.strip():
+                logger.warning(
+                    "NOTAM이 0건 추출됨(텍스트는 있음). PDF 형식 또는 인코딩 확인 필요. "
+                    "텍스트 앞 500자: %s", text[:500].replace('\n', ' ')
+                )
             
             # 최근 NOTAM 캐시 저장 (split 파일명으로 저장하여 정확한 매칭)
             try:
-                global LAST_NOTAMS, LAST_NOTAMS_SOURCE, LAST_NOTAMS_INDEXED_BY_AIRPORT
+                global LAST_NOTAMS, LAST_NOTAMS_SOURCE, LAST_NOTAMS_INDEXED_BY_AIRPORT, LAST_PACKAGE3_TEXT
                 LAST_NOTAMS = notams or []
                 # split 파일명이 있으면 사용 (docpack과 일반 PDF 모두)
                 if 'split_filename' in locals() and split_filename:
@@ -1179,6 +1365,19 @@ def upload_file():
                     # 폴백: 원본 파일명 사용
                     LAST_NOTAMS_SOURCE = os.path.basename(filepath)
                 LAST_NOTAMS_INDEXED_BY_AIRPORT = _index_notams_by_airport(LAST_NOTAMS)
+                
+                # Package 3 텍스트 추출 및 캐시 저장 (Cloud Run 호환성)
+                try:
+                    from src.package3_parser import _extract_package3_text
+                    LAST_PACKAGE3_TEXT = _extract_package3_text(text)
+                    if LAST_PACKAGE3_TEXT:
+                        logger.info(f"Package 3 텍스트 캐시 저장: {len(LAST_PACKAGE3_TEXT)} 문자")
+                    else:
+                        logger.debug("Package 3 텍스트 없음 (캐시 저장 안 함)")
+                except Exception as e:
+                    logger.warning(f"Package 3 텍스트 추출 실패: {e}")
+                    LAST_PACKAGE3_TEXT = None
+                
                 logger.info(f"최근 NOTAM 캐시 저장: {len(LAST_NOTAMS)}개, source={LAST_NOTAMS_SOURCE}, 공항수={len(LAST_NOTAMS_INDEXED_BY_AIRPORT)}")
             except Exception as e:
                 logger.warning(f"최근 NOTAM 캐시 저장 실패: {e}")
@@ -1359,7 +1558,10 @@ def upload_file():
             processing_times['time_conversion'] = (datetime.now() - time_conversion_start).total_seconds()
             
             if not notams:
-                flash('필터링된 NOTAM이 없습니다.')
+                flash(
+                    '필터링된 NOTAM이 없습니다. '
+                    'PDF가 "KOREAN AIR NOTAM PACKAGE" 형식인지 확인하거나, 다른 오류 메시지가 있었다면 터미널 로그를 확인해 주세요.'
+                )
                 return redirect(url_for('index'))
             
             # NOTAM 번역 및 요약 시간 측정 (병렬 번역기 사용)
@@ -1389,6 +1591,67 @@ def upload_file():
                 f"번역: {processing_times['translation']:.2f}s ({len(notams)}개, 평균 {processing_times['translation']/len(notams):.2f}s/개)"
             )
             
+            # 주요 터뷸런스 예상 구간 테이블 (OFP PDF에서 SR 5+ 구간 추출)
+            major_turbulence_table = []
+            try:
+                from flightplanextractor import extract_flight_data_from_pdf, build_major_turbulence_table
+                flight_data = extract_flight_data_from_pdf(filepath, save_temp=False)
+                if flight_data:
+                    major_turbulence_table = build_major_turbulence_table(flight_data)
+                    if major_turbulence_table:
+                        logger.info(f"주요 터뷸런스 예상 구간: {len(major_turbulence_table)}개 구간")
+            except Exception as e:
+                logger.warning(f"주요 터뷸런스 테이블 생성 실패: {e}")
+            
+            # 공항별 기상(TAF) 분석 테이블 (DEP/DEST/ALTN/REFILE/EDTO/ERA)
+            airport_weather_table = []
+            try:
+                from src.flight_plan_analyzer import build_airport_weather_table
+                airport_weather_table = build_airport_weather_table(text)
+                if airport_weather_table:
+                    logger.info(f"공항별 기상 분석: {len(airport_weather_table)}개 공항")
+            except Exception as e:
+                logger.warning(f"공항별 기상 분석 테이블 생성 실패: {e}")
+            
+            # Q Route 비교 결과 (OFP vs ATS FPL) — 2nd plan 행 아래에 표시
+            route_comparison = None
+            try:
+                import pdfplumber
+                from src.ats_route_extractor import (
+                    extract_ats_fpl_route_from_page,
+                    compare_routes,
+                    normalize_route,
+                )
+                if extracted_route and extracted_route.strip():
+                    ofp_normalized = normalize_route(extracted_route)
+                    ats_route = None
+                    try:
+                        with pdfplumber.open(filepath) as pdf:
+                            page_texts = [(p.extract_text() or "") for p in pdf.pages]
+                        for page_text in page_texts:
+                            if not page_text:
+                                continue
+                            up = page_text.upper()
+                            if "COPY OF ATS FPL" in up or "ATS FPL" in up or "(FPL-" in page_text:
+                                ats_route = extract_ats_fpl_route_from_page(page_text)
+                                if ats_route:
+                                    break
+                    except Exception as e2:
+                        logger.warning(f"ATS FPL 페이지 스캔 실패: {e2}")
+                    if ats_route:
+                        route_comparison = compare_routes(extracted_route, ats_route)
+                        logger.info(f"Q Route 비교: 일치={route_comparison.get('match')}")
+                    else:
+                        # OFP만 있어도 블록 표시 (ATS 미추출 시 메시지로 안내)
+                        route_comparison = {
+                            "ofp_normalized": ofp_normalized,
+                            "ats_normalized": None,
+                            "match": False,
+                            "ats_not_found": True,
+                        }
+            except Exception as e:
+                logger.warning(f"Q Route 비교 생성 실패: {e}")
+            
             # 템플릿에 공항 정보 및 항로 정보 전달
             return render_template('results.html', 
                                  notams=notams, 
@@ -1398,7 +1661,15 @@ def upload_file():
                                  package_airports=filtered_package_airports,
                                  package1_route_info=package1_route_info,  # Package 1 항로 정보 추가
                                  extracted_route=extracted_route if extracted_route else '',
-                                 is_docpack=bool(extracted_route))
+                                 is_docpack=bool(extracted_route),
+                                 flight_plan_waypoints=flight_plan_waypoints,
+                                 flight_plan_summary_items_before=flight_plan_summary_items_before,
+                                 flight_plan_summary_items_after=flight_plan_summary_items_after,
+                                 flight_plan_fuel_time_table=flight_plan_fuel_time_table,
+                                 flight_plan_weight_table=flight_plan_weight_table,
+                                 major_turbulence_table=major_turbulence_table,
+                                 route_comparison=route_comparison,
+                                 airport_weather_table=airport_weather_table)
         
         else:
             flash('허용되지 않는 파일 형식입니다. PDF 파일만 업로드 가능합니다.')
@@ -3097,19 +3368,41 @@ def download_html(filename):
 # 마지막 health check는 유지 (앱 종료 전에 필요)
 
 if __name__ == '__main__':
-    # Ctrl+C (SIGINT) 시그널 핸들러 설정
-    def signal_handler(sig, frame):
-        print('\n\n🛑 애플리케이션을 종료합니다...')
-        sys.exit(0)
-    
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
+    # PID 파일 경로
+    PID_FILE = '.smartnotam.pid'
     
     # 종료 시 정리 함수
     def cleanup():
         print('\n🛑 애플리케이션을 종료합니다...')
+        # PID 파일 삭제
+        if os.path.exists(PID_FILE):
+            try:
+                os.remove(PID_FILE)
+            except:
+                pass
     
+    # atexit로 정리 함수 등록 (정상 종료 시)
     atexit.register(cleanup)
+    
+    # 시그널 핸들러 설정 (Flask의 종료를 방해하지 않도록 KeyboardInterrupt 재발생)
+    def signal_handler(sig, frame):
+        """시그널 핸들러: KeyboardInterrupt를 재발생시켜 Flask가 처리하도록 함"""
+        print('\n\n🛑 종료 신호를 받았습니다...')
+        # KeyboardInterrupt를 재발생시켜 Flask의 기본 처리 메커니즘이 작동하도록 함
+        raise KeyboardInterrupt
+    
+    # SIGINT (Ctrl+C)와 SIGTERM 시그널 핸들러 등록
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    # PID 파일에 현재 프로세스 ID 저장
+    try:
+        with open(PID_FILE, 'w') as f:
+            f.write(str(os.getpid()))
+        print(f"📝 프로세스 ID가 저장되었습니다: {os.getpid()}")
+        print(f"💡 종료하려면: ./stop_app.sh 또는 Ctrl+C (여러 번 눌러보세요)")
+    except Exception as e:
+        logger.warning(f"PID 파일 저장 실패: {e}")
     
     # Cloud Run에서는 PORT 환경변수를 사용, 로컬에서는 5005 사용
     port = int(os.environ.get('PORT', 5005))
@@ -3246,6 +3539,11 @@ if __name__ == '__main__':
     print(f"🚀 Smart NOTAM 애플리케이션이 시작되었습니다!")
     print(f"📍 로컬 주소: http://localhost:{port}")
     print(f"📍 네트워크 주소: http://127.0.0.1:{port}")
+    print("="*60)
+    print(f"⏹️  종료 방법:")
+    print(f"   1. Ctrl+C (기본 방법)")
+    print(f"   2. 다른 터미널에서: ./stop_app.sh")
+    print(f"   3. 포트 종료: lsof -ti :{port} | xargs kill -9")
     print("="*60 + "\n")
     
     # 크롬 브라우저 자동 열기
@@ -3324,7 +3622,9 @@ if __name__ == '__main__':
             # 개발 환경에서는 debug=True (개발 편의를 위해 reloader는 비활성화)
             app.run(debug=True, host='0.0.0.0', port=port, use_reloader=False)
     except KeyboardInterrupt:
+        # Flask의 기본 KeyboardInterrupt 처리가 작동함
         print('\n\n🛑 Ctrl+C를 눌러 애플리케이션을 종료합니다...')
+        cleanup()
         sys.exit(0)
     except OSError as e:
         if 'Address already in use' in str(e) or '포트' in str(e):

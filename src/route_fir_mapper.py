@@ -92,6 +92,9 @@ class RouteFIRMapper:
     # 내부 구현
     # ------------------------------------------------------------------
     def _tokenize_route(self, route: str) -> List[str]:
+        # ".." = waypoint 간 직통(DCT), 공백 = 구분자. 둘 다 공백 하나로 통일하면
+        # 토큰 순서만으로 의미 유지: airway는 "직전 waypoint → 다음 waypoint"에만 적용.
+        # 예: "POOFF..SPY G469 PDN" → [POOFF, SPY, G469, PDN] → POOFF-SPY 직통, SPY-(G469)-PDN
         sanitized = re.sub(r"[.\s]+", " ", route.strip().upper())
         tokens = [token for token in sanitized.split(" ") if token]
         return tokens
@@ -125,12 +128,17 @@ class RouteFIRMapper:
                         f"{pending_airway} 항로에서 {previous_ident}->{point.ident} 구간을 찾지 못했습니다."
                     )
                 else:
+                    # 동일 항로 코드(W4 등)가 여러 지역에 있으면 잘못된 지역 waypoint가 섞일 수 있음 → 지리적 범위로 필터
+                    start_lat, start_lon = previous_coord
+                    end_lat, end_lon = point.lat, point.lon
                     for intermediate in inserted_points:
                         if intermediate in {previous_ident, point.ident}:
                             continue
                         coord = self.nav_loader.get_waypoint_coordinates(intermediate, previous_coord)
                         if not coord:
                             warnings.append(f"{pending_airway} 항로 중간 waypoint {intermediate} 좌표를 찾지 못했습니다.")
+                            continue
+                        if not self._is_in_corridor(coord, (start_lat, start_lon), (end_lat, end_lon)):
                             continue
                         source = self.nav_loader.get_coordinate_source(intermediate) or "awys"
                         intermediate_point = RoutePoint(
@@ -187,10 +195,16 @@ class RouteFIRMapper:
             return None
 
         try:
-            start_idx = waypoints.index(start_ident)
             end_idx = waypoints.index(end_ident)
         except ValueError:
             return None
+
+        try:
+            start_idx = waypoints.index(start_ident)
+        except ValueError:
+            # 시작점이 항로에 없고 끝점만 있는 경우 (예: POOFF G469 PDN에서 POOFF는 G469 미포함)
+            # 항로 시작부터 끝점까지 포함해 SPY 등 중간 waypoint 누락 방지
+            return waypoints[: end_idx + 1]
 
         if start_idx < end_idx:
             return waypoints[start_idx : end_idx + 1]
@@ -199,6 +213,25 @@ class RouteFIRMapper:
             return segment
         else:
             return [start_ident]
+
+    @staticmethod
+    def _is_in_corridor(
+        coord: Tuple[float, float],
+        start: Tuple[float, float],
+        end: Tuple[float, float],
+        margin_deg: float = 20.0,
+    ) -> bool:
+        """항로 구간(start~end)의 지리적 범위 안에 있는지 검사. 동일 항로코드가 여러 지역에 있을 때 타 지역 waypoint 제거용."""
+        lat, lon = coord
+        lat_lo = min(start[0], end[0]) - margin_deg
+        lat_hi = max(start[0], end[0]) + margin_deg
+        lon_lo = min(start[1], end[1]) - margin_deg
+        lon_hi = max(start[1], end[1]) + margin_deg
+        if not (lat_lo <= lat <= lat_hi):
+            return False
+        if lon_lo <= lon_hi:
+            return lon_lo <= lon <= lon_hi
+        return lon >= lon_lo or lon <= lon_hi
 
     def _enrich_segments(
         self, segments: Sequence[Dict[str, object]], points: Sequence[RoutePoint]

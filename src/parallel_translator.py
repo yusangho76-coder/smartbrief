@@ -363,6 +363,7 @@ Ensure the summary is concise, easy to understand for immediate operational awar
 14. "CEILING"은 반드시 "운고"로 번역하세요
 15. "TXL"은 "택시레인"으로 번역하세요 (Taxilane: 주기장이나 격납고 주변에서 주차 공간 사이를 이동하기 위한 보조 이동로)
 16. TXL 뒤에 나오는 것은 택시레인의 이름입니다 (예: TXL DC = 택시레인 DC)
+17. "TWY LINK nn" 또는 "LINK nn"(예: LINK 30)은 번역 시 "LINK 30"처럼 그대로 유지하세요. LINK는 택시웨이와 에이프런을 연결하는 구간을 일컫는 용어이므로 "택시레인"으로 번역하지 마세요.
 
 원문: {processed_text}
 

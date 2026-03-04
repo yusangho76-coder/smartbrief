@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import logging
+from pathlib import Path
 from flask import Blueprint, current_app, jsonify, request
 from datetime import datetime, timedelta
 
@@ -20,6 +21,20 @@ def api_route_path():
     if not route_text:
         return jsonify({"error": "route parameter is required"}), 400
 
+    # Flight plan에서 추출한 waypoint 좌표 (있으면 NavData 대신 사용)
+    waypoints_from_plan = payload.get("waypoints") or []
+    coord_by_ident = {}
+    for w in waypoints_from_plan:
+        ident = (w.get("ident") or "").strip().upper()
+        lat, lon = w.get("lat"), w.get("lon")
+        if ident and lat is not None and lon is not None:
+            try:
+                coord_by_ident[ident] = (float(lat), float(lon))
+            except (TypeError, ValueError):
+                pass
+    if coord_by_ident:
+        logger.info(f"Flight plan waypoint 좌표 사용: {len(coord_by_ident)}개")
+
     try:
         result = route_fir_mapper.analyze_route(route_text)
     except Exception as exc:  # pragma: no cover - logging only
@@ -27,8 +42,12 @@ def api_route_path():
 
     coordinates = []
     for point in result.get("points", []):
+        ident = point.get("ident") or ""
         lat = point.get("lat")
         lon = point.get("lon")
+        # Flight plan 좌표가 있으면 우선 사용 (NavData 중복 이름 오류 방지)
+        if ident and ident.upper() in coord_by_ident:
+            lat, lon = coord_by_ident[ident.upper()]
         if lat is None or lon is None:
             continue
         coordinates.append(
@@ -41,12 +60,45 @@ def api_route_path():
             }
         )
 
-    return jsonify(
-        {
-            "coordinates": coordinates,
-            "warnings": result.get("warnings", []),
-        }
-    )
+    # Flight plan waypoint가 있으면 OFP 테이블에 나온 순서 그대로 경로로 사용 (route 문자열 무관, 지도 = OFP 표시)
+    coordinates_from_plan = []
+    if len(waypoints_from_plan) >= 3:
+        for w in waypoints_from_plan:
+            ident = (w.get("ident") or w.get("Waypoint") or "").strip().upper()
+            lat, lon = w.get("lat"), w.get("lon")
+            if ident and lat is not None and lon is not None:
+                try:
+                    coordinates_from_plan.append({
+                        "lat": float(lat),
+                        "lng": float(lon),
+                        "ident": ident,
+                    })
+                except (TypeError, ValueError):
+                    pass
+        # OFP 테이블은 출발 공항(RKSI 등)을 포함하지 않을 수 있음 → route 첫 4자리(출발)를 맨 앞에 추가
+        import re
+        first_token = (route_text.strip().upper().split() or [""])[0]
+        dep_match = re.match(r"^([A-Z]{4})\.?", first_token)
+        dep_ident = dep_match.group(1) if dep_match else None
+        if dep_ident and coordinates_from_plan and coordinates_from_plan[0].get("ident") != dep_ident:
+            for point in result.get("points", []):
+                if (point.get("ident") or "").upper() == dep_ident:
+                    lat, lon = point.get("lat"), point.get("lon")
+                    if lat is not None and lon is not None:
+                        coordinates_from_plan.insert(0, {
+                            "lat": float(lat),
+                            "lng": float(lon),
+                            "ident": dep_ident,
+                        })
+                        logger.info(f"출발 공항 {dep_ident} 경로 맨 앞에 추가")
+                    break
+    if coordinates_from_plan:
+        logger.info(f"OFP 테이블 기반 경로 좌표: {len(coordinates_from_plan)}개 (Flight plan waypoint 순서 그대로)")
+
+    out = {"coordinates": coordinates, "warnings": result.get("warnings", [])}
+    if coordinates_from_plan:
+        out["coordinates_from_plan"] = coordinates_from_plan
+    return jsonify(out)
 
 
 @api_bp.route("/api/fir-geojson", methods=["GET"])
@@ -57,8 +109,28 @@ def api_fir_geojson():
 
 @api_bp.route("/api/package3-polygons", methods=["GET"])
 def api_package3_polygons():
-    temp_dir = current_app.config.get("TEMP_FOLDER", "temp")
-    parsed = get_package3_data(temp_dir)
+    # 먼저 메모리 캐시에서 Package 3 텍스트 확인 (Cloud Run 호환성)
+    package3_text = None
+    try:
+        # 순환 import 방지를 위해 함수를 통해 접근
+        import sys
+        if 'app' in sys.modules:
+            from app import get_last_package3_text
+            package3_text = get_last_package3_text()
+            if package3_text:
+                logger.info(f"Package 3 캐시에서 텍스트 사용: {len(package3_text)} 문자")
+    except Exception as e:
+        logger.debug(f"Package 3 캐시 확인 실패 (파일에서 읽기 시도): {e}")
+    
+    # 캐시가 없으면 파일에서 읽기
+    if not package3_text:
+        temp_dir = current_app.config.get("TEMP_FOLDER", "temp")
+        if not os.path.isabs(temp_dir):
+            temp_dir = os.path.join(current_app.root_path, temp_dir)
+        parsed = get_package3_data(Path(temp_dir))
+    else:
+        # 캐시된 텍스트 사용
+        parsed = get_package3_data(package3_text=package3_text)
 
     area_items = []
     for area in parsed.areas:

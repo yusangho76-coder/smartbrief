@@ -68,11 +68,16 @@ def api_route_path():
             lat, lon = w.get("lat"), w.get("lon")
             if ident and lat is not None and lon is not None:
                 try:
-                    coordinates_from_plan.append({
-                        "lat": float(lat),
-                        "lng": float(lon),
+                    pt = {
+                        "lat":   float(lat),
+                        "lng":   float(lon),
                         "ident": ident,
-                    })
+                    }
+                    if w.get("fl") is not None:
+                        pt["fl"] = int(w["fl"])
+                    if w.get("actm") is not None:
+                        pt["actm"] = str(w["actm"])
+                    coordinates_from_plan.append(pt)
                 except (TypeError, ValueError):
                     pass
         # OFP 테이블은 출발 공항(RKSI 등)을 포함하지 않을 수 있음 → route 첫 4자리(출발)를 맨 앞에 추가
@@ -525,3 +530,288 @@ def api_sigmet():
     except Exception as exc:
         logger.error(f"SIGMET API error: {exc}", exc_info=True)
         return jsonify({"error": f"SIGMET 데이터 가져오기 실패: {exc}"}), 500
+
+
+@api_bp.route("/api/route-turb-openmeteo", methods=["POST"])
+def api_route_turb_openmeteo():
+    """
+    Open-Meteo GFS 압력면 바람 데이터로 경로상 CAT(Clear Air Turbulence) 위험도 계산.
+    - 순항 FL에 맞는 압력면 수직 Wind Shear → CAT proxy (FL별 정밀 분석)
+    - 응답 ~700ms, 무료, 파일 다운로드 없음
+    Request:
+      { "waypoints": [{"lat":37.5,"lng":127.0,"name":"WP1","fl":330}, ...],
+        "ref_hour_utc": 9 }   ← OFP ETD UTC hour (선택)
+    Response:
+      { "segments": [...], "waypoints": [...] }
+    """
+    import math, requests as req
+    from datetime import datetime, timezone
+
+    # ── FL → 인접 압력면 쌍 대응표 ──────────────────────────────────────────
+    # 순항 FL 기준으로 바로 위/아래 압력면 shear를 주로 분석
+    # FL  → [ (upper_hPa, lower_hPa), ... ]  (가장 가까운 레벨 우선)
+    FL_TO_PRESSURE_PAIRS = {
+        # FL240~FL260
+        (240, 270): [("350hPa", "300hPa"), ("300hPa", "250hPa")],
+        # FL270~FL290
+        (270, 300): [("300hPa", "250hPa"), ("350hPa", "300hPa")],
+        # FL300~FL320
+        (300, 325): [("300hPa", "250hPa"), ("250hPa", "200hPa")],
+        # FL330 (주 순항고도)
+        (325, 345): [("250hPa", "300hPa"), ("200hPa", "250hPa")],
+        # FL350~FL360
+        (345, 365): [("250hPa", "200hPa"), ("300hPa", "250hPa")],
+        # FL370~FL390
+        (365, 400): [("200hPa", "250hPa"), ("250hPa", "300hPa")],
+        # FL400+
+        (400, 600): [("200hPa", "250hPa")],
+    }
+
+    def get_pressure_pairs(fl):
+        """FL 값으로 분석할 압력면 쌍 반환"""
+        if fl is None:
+            # FL 정보 없으면 전 레벨 분석
+            return [("200hPa","250hPa"), ("250hPa","300hPa"), ("300hPa","350hPa")]
+        for (lo, hi), pairs in FL_TO_PRESSURE_PAIRS.items():
+            if lo <= fl < hi:
+                return pairs
+        return [("250hPa","300hPa"), ("200hPa","250hPa")]
+
+    try:
+        data = request.get_json(force=True) or {}
+        waypoints = data.get("waypoints", [])
+        req_hour  = data.get("ref_hour_utc")   # 클라이언트에서 ETD hour 전달 가능
+
+        if len(waypoints) < 2:
+            return jsonify({"error": "최소 2개 waypoint 필요"}), 400
+
+        # 샘플링: 최대 50개 포인트
+        MAX_PTS = 50
+        if len(waypoints) > MAX_PTS:
+            step = len(waypoints) // MAX_PTS
+            sampled = waypoints[::step]
+            if waypoints[-1] not in sampled:
+                sampled.append(waypoints[-1])
+        else:
+            sampled = waypoints
+
+        lats = ",".join(str(w["lat"]) for w in sampled)
+        lons = ",".join(str(w.get("lng", w.get("lon", 0))) for w in sampled)
+
+        # UTC 기준 시간 (ETD hour 우선, 없으면 현재)
+        ref_hour = int(req_hour) if req_hour is not None else datetime.now(timezone.utc).hour
+
+        url = (
+            "https://api.open-meteo.com/v1/forecast?"
+            f"latitude={lats}&longitude={lons}"
+            "&hourly=wind_speed_200hPa,wind_speed_250hPa,wind_speed_300hPa,"
+            "wind_direction_200hPa,wind_direction_250hPa,wind_direction_300hPa,"
+            "wind_speed_350hPa,wind_direction_350hPa"
+            "&wind_speed_unit=kn"
+            "&models=gfs_seamless"
+            "&forecast_days=2"
+        )
+
+        resp = req.get(url, timeout=12)
+        if resp.status_code != 200:
+            return jsonify({"error": f"Open-Meteo API 오류: {resp.status_code}"}), 502
+
+        om_data = resp.json()
+        if not isinstance(om_data, list):
+            om_data = [om_data]
+
+        def wind_vector(spd, dir_deg):
+            if spd is None or dir_deg is None:
+                return 0.0, 0.0
+            r = math.radians(float(dir_deg))
+            return -float(spd) * math.sin(r), -float(spd) * math.cos(r)
+
+        def v_shear(spd1, dir1, spd2, dir2):
+            u1, v1 = wind_vector(spd1, dir1)
+            u2, v2 = wind_vector(spd2, dir2)
+            return math.sqrt((u1 - u2) ** 2 + (v1 - v2) ** 2)
+
+        def cat_level(shear_kt):
+            if shear_kt >= 40:
+                return "SEV", "#CC0000", 4
+            elif shear_kt >= 25:
+                return "MOD", "#FF6600", 3
+            elif shear_kt >= 12:
+                return "LGT", "#FFB300", 2
+            else:
+                return "NIL", "#00AA44", 1
+
+        def cat_label_ko(lvl):
+            return {"SEV": "심한 터뷸런스", "MOD": "보통 터뷸런스",
+                    "LGT": "약한 터뷸런스", "NIL": "터뷸런스 없음"}.get(lvl, lvl)
+
+        results = []
+        for i, (wp, om_pt) in enumerate(zip(sampled, om_data)):
+            h = om_pt.get("hourly", {})
+
+            # OFP ACTM을 이용한 시간 인덱스 보정 (WP마다 통과 시각이 다름)
+            wp_fl   = wp.get("fl")
+            wp_actm = wp.get("actm")   # "HH.MM" 형식
+            wp_idx  = ref_hour
+            if wp_actm:
+                try:
+                    hh, mm = map(int, str(wp_actm).replace(".", ":").split(":"))
+                    wp_idx = (ref_hour + hh) % 24
+                except Exception:
+                    pass
+            if wp_idx >= len(h.get("wind_speed_200hPa", [None])):
+                wp_idx = 0
+
+            def get_wind(level_key, idx):
+                spd = (h.get(f"wind_speed_{level_key}") or [None]*48)[idx]
+                d   = (h.get(f"wind_direction_{level_key}") or [None]*48)[idx]
+                return spd, d
+
+            ws200, wd200 = get_wind("200hPa", wp_idx)
+            ws250, wd250 = get_wind("250hPa", wp_idx)
+            ws300, wd300 = get_wind("300hPa", wp_idx)
+            ws350, wd350 = get_wind("350hPa", wp_idx)
+
+            wind_map = {
+                "200hPa": (ws200, wd200),
+                "250hPa": (ws250, wd250),
+                "300hPa": (ws300, wd300),
+                "350hPa": (ws350, wd350),
+            }
+
+            # FL에 맞는 압력면 쌍으로 shear 계산
+            pairs = get_pressure_pairs(wp_fl)
+            shears = []
+            for upper_key, lower_key in pairs:
+                su, du = wind_map.get(upper_key, (None, None))
+                sl, dl = wind_map.get(lower_key, (None, None))
+                if all(v is not None for v in [su, du, sl, dl]):
+                    shears.append(v_shear(su, du, sl, dl))
+
+            # 보조: 인접 레벨도 추가 체크 (보수적)
+            for (s1,d1),(s2,d2) in [((ws200,wd200),(ws250,wd250)),
+                                     ((ws250,wd250),(ws300,wd300)),
+                                     ((ws300,wd300),(ws350,wd350))]:
+                if all(v is not None for v in [s1,d1,s2,d2]):
+                    shears.append(v_shear(s1,d1,s2,d2) * 0.8)   # 가중치 0.8 (보조 레벨)
+
+            max_shear = max(shears) if shears else 0.0
+            lvl, color, severity = cat_level(max_shear)
+
+            # FL 기반 압력면 레이블
+            fl_label = f"FL{wp_fl}" if wp_fl else "FL?"
+            pair_label = " / ".join(f"{a}↔{b}" for a, b in pairs[:2])
+
+            results.append({
+                "name":         wp.get("name", f"WP{i}"),
+                "lat":          wp["lat"],
+                "lng":          wp.get("lng", wp.get("lon", 0)),
+                "fl":           wp_fl,
+                "fl_label":     fl_label,
+                "pressure_pairs": pair_label,
+                "cat_level":    lvl,
+                "cat_label":    cat_label_ko(lvl),
+                "color":        color,
+                "severity":     severity,
+                "max_shear_kt": round(max_shear, 1),
+                "wind_200hPa":  {"spd": ws200, "dir": wd200},
+                "wind_250hPa":  {"spd": ws250, "dir": wd250},
+                "wind_300hPa":  {"spd": ws300, "dir": wd300},
+                "wind_350hPa":  {"spd": ws350, "dir": wd350},
+            })
+
+        # waypoint 쌍별 색상 구간 생성
+        segments = []
+        for i in range(len(results) - 1):
+            a, b = results[i], results[i + 1]
+            # 두 점 중 더 심한 쪽 기준
+            if a["severity"] >= b["severity"]:
+                seg_lvl, seg_color = a["cat_level"], a["color"]
+                seg_shear = a["max_shear_kt"]
+            else:
+                seg_lvl, seg_color = b["cat_level"], b["color"]
+                seg_shear = b["max_shear_kt"]
+            # FL별 압력면 정보도 segment에 포함
+            worst = a if a["severity"] >= b["severity"] else b
+            segments.append({
+                "from_wp":       a["name"],
+                "to_wp":         b["name"],
+                "from_lat":      a["lat"],
+                "from_lng":      a["lng"],
+                "to_lat":        b["lat"],
+                "to_lng":        b["lng"],
+                "fl_label":      worst.get("fl_label", "FL?"),
+                "pressure_pairs": worst.get("pressure_pairs", ""),
+                "cat_level":     seg_lvl,
+                "cat_label":     cat_label_ko(seg_lvl),
+                "color":         seg_color,
+                "max_shear_kt":  seg_shear,
+            })
+
+        return jsonify({
+            "waypoints":    results,
+            "segments":     segments,
+            "source":       "Open-Meteo GFS · FL별 압력면 수직 Wind Shear → CAT proxy",
+            "ref_hour_utc": ref_hour,
+        })
+
+    except Exception as exc:
+        logger.error(f"route-turb-openmeteo 오류: {exc}", exc_info=True)
+        return jsonify({"error": str(exc)}), 500
+
+
+# ── WAFS GRIB2 터뷸런스 (NOMADS bbox 필터 + cfgrib 파싱) ──────────────────
+@api_bp.route("/api/wafs-turb", methods=["POST"])
+def api_wafs_turb():
+    """
+    NOMADS에서 경로 주변 WAFS GRIB2만 다운로드해 CAT 폴리곤/격자 반환.
+    Request:
+      {
+        "waypoints": [{"lat":..,"lng":..,"name":..}, ...],
+        "etd_utc":   "2026-03-07T09:30Z",   // 선택
+        "cruise_fls": [310, 330, 350]        // 선택 (없으면 전 레벨)
+      }
+    Response:
+      {
+        "geojson":   { GeoJSON FeatureCollection },
+        "source":    "NOMADS WAFS ...",
+        "valid_utc": "...",
+        "cache_hit": bool,
+        "error":     null | "..."
+      }
+    """
+    from datetime import datetime, timezone
+    from src.wafs_analyzer import fetch_wafs_turbulence
+
+    try:
+        data      = request.get_json(force=True) or {}
+        waypoints = data.get("waypoints", [])
+
+        if len(waypoints) < 2:
+            return jsonify({"error": "waypoint 2개 이상 필요"}), 400
+
+        # ETD 파싱
+        etd_utc = None
+        etd_str = data.get("etd_utc")
+        if etd_str:
+            try:
+                etd_utc = datetime.fromisoformat(
+                    etd_str.replace("Z", "+00:00")
+                )
+            except Exception:
+                pass
+
+        cruise_fls = data.get("cruise_fls")   # None 허용
+
+        result = fetch_wafs_turbulence(
+            waypoints  = waypoints,
+            etd_utc    = etd_utc,
+            cruise_fls = cruise_fls,
+        )
+
+        status = 200 if not result.get("error") else 502
+        return jsonify(result), status
+
+    except Exception as exc:
+        logger.error(f"wafs-turb 오류: {exc}", exc_info=True)
+        return jsonify({"error": str(exc)}), 500

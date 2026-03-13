@@ -233,6 +233,13 @@ class PDFConverter:
 
         return '\n\n'.join(split_notams_list_cleaned) + '\n'
     
+    def get_raw_pdf_text(self, pdf_path: str) -> str:
+        """
+        NOTAM 분리/가공 없이 PDF 전체 페이지를 순서대로 추출한 원문.
+        REFILE·OFP 등 블록 경계와 무관하게 분석할 때 사용.
+        """
+        return self._extract_text_from_pdf(pdf_path)
+
     def convert_pdf_to_text(self, pdf_path: str, save_temp=True) -> str:
         """
         PDF 파일을 텍스트로 변환하고, 유형을 자동 감지하여 적절한 처리 적용

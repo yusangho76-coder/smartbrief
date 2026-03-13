@@ -238,7 +238,12 @@ class NavDataLoader:
 
     @staticmethod
     def _distance(a: Tuple[float, float], b: Tuple[float, float]) -> float:
-        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+        """위경도 거리 근사. 경도는 ±180 래핑을 적용해 최단 각도 차이 사용."""
+        dlat = abs(a[0] - b[0])
+        dlon = abs(a[1] - b[1])
+        if dlon > 180:
+            dlon = 360.0 - dlon
+        return dlat + dlon
 
     def _estimate_fir_by_pattern(self, waypoint: str) -> Optional[str]:
         """간단한 패턴 기반 FIR 추정 (fallback)"""

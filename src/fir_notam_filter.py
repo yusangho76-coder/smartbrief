@@ -3,6 +3,7 @@ FIR 기반 NOTAM 필터링 시스템
 좌표 구간이 속한 FIR의 NOTAM만 선별
 """
 
+import math
 from typing import List, Dict, Any, Optional, Tuple
 from .fir_boundaries import identify_fir_by_coordinate, analyze_upr_route
 from .upr_parser import parse_route_with_waypoints
@@ -140,7 +141,7 @@ class FIRNotamFilter:
         parsed_route = parse_route_with_waypoints(route_text)
         
         # 2. 좌표 구간에서 FIR 분석
-        coordinates = parsed_route.get('coordinates', [])
+        coordinates: List[Tuple[float, float]] = parsed_route.get('coordinates', [])
         fir_analysis = analyze_upr_route(coordinates) if coordinates else {}
         
         # 3. FIR별 NOTAM 필터링 (중복 제거)
@@ -157,11 +158,12 @@ class FIRNotamFilter:
                     unique_notams[notam_id] = notam
             fir_notams[fir_code] = list(unique_notams.values())
         
-        # 4. waypoint 기반 NOTAM 필터링 (확장된 waypoint 포함)
+        # 4. waypoint 기반 NOTAM 필터링 (확장된 waypoint 포함 + 거리 기반 150NM 필터링)
         all_waypoints = parsed_route.get('waypoints', []) + parsed_route.get('expanded_waypoints', [])
         waypoint_notams = self._filter_notams_by_waypoints(
             all_waypoints, 
-            notams_data
+            notams_data,
+            route_coordinates=coordinates
         )
         
         # 5. waypoint FIR 분석 (새로운 기능)
@@ -177,7 +179,13 @@ class FIRNotamFilter:
             'total_relevant_notams': self._count_total_relevant_notams(fir_notams, waypoint_notams)
         }
     
-    def _filter_notams_by_waypoints(self, waypoints: List[str], notams_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _filter_notams_by_waypoints(
+        self,
+        waypoints: List[str],
+        notams_data: List[Dict[str, Any]],
+        route_coordinates: Optional[List[Tuple[float, float]]] = None,
+        max_distance_nm: float = 150.0,
+    ) -> List[Dict[str, Any]]:
         """
         waypoint 기반 NOTAM 필터링 (다단계 매칭 시스템)
         
@@ -188,37 +196,48 @@ class FIRNotamFilter:
         Returns:
             List[Dict[str, Any]]: 필터링된 NOTAM 리스트
         """
-        filtered_notams = []
-        
+        filtered_notams: List[Dict[str, Any]] = []
+        upper_waypoints = [wp.upper() for wp in waypoints]
+
         for notam in notams_data:
-            description = notam.get('description', '').upper()
-            text = notam.get('text', '').upper()
+            description = (notam.get('description', '') or '').upper()
+            text = (notam.get('text', '') or '').upper()
             full_text = f"{description} {text}"
-            
+
+            is_candidate = False
+
             # 1단계: 직접 waypoint 매칭 (가장 정확)
-            for waypoint in waypoints:
-                if waypoint.upper() in full_text:
-                    filtered_notams.append(notam)
-                    break
-            
-            # 2단계: waypoint FIR 기반 매칭 (패턴 + 좌표 기반)
-            if not any(waypoint.upper() in full_text for waypoint in waypoints):
-                for waypoint in waypoints:
+            if any(wp in full_text for wp in upper_waypoints):
+                is_candidate = True
+            else:
+                # 2단계: waypoint FIR 기반 매칭 (패턴 + 좌표 기반)
+                for waypoint in upper_waypoints:
                     waypoint_fir = estimate_waypoint_fir(waypoint)
-                    if waypoint_fir:
-                        # NOTAM의 공항이 해당 FIR에 속하는지 확인
-                        if self._is_notam_in_fir(notam, waypoint_fir):
-                            filtered_notams.append(notam)
-                            break
-            
-            # 3단계: 항로코드 기반 waypoint 확장 매칭
-            if not any(waypoint.upper() in full_text for waypoint in waypoints):
-                expanded_waypoints = self._expand_waypoints_from_route_codes(waypoints)
-                for waypoint in expanded_waypoints:
-                    if waypoint.upper() in full_text:
-                        filtered_notams.append(notam)
+                    if waypoint_fir and self._is_notam_in_fir(notam, waypoint_fir):
+                        is_candidate = True
                         break
-        
+
+            # 3단계: 항로코드 기반 waypoint 확장 매칭
+            if not is_candidate:
+                expanded_waypoints = self._expand_waypoints_from_route_codes(upper_waypoints)
+                if any(wp in full_text for wp in expanded_waypoints):
+                    is_candidate = True
+
+            # 4단계: 거리 기반 필터링 (Haversine, 150NM 이내만 유지)
+            if is_candidate and route_coordinates:
+                notam_coord = notam.get('coordinates')
+                if isinstance(notam_coord, dict):
+                    lat = notam_coord.get('latitude')
+                    lon = notam_coord.get('longitude')
+                    if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+                        min_dist = self._min_distance_to_route(lat, lon, route_coordinates)
+                        # 150NM보다 먼 좌표만 언급하는 NOTAM은 제외
+                        if min_dist is None or min_dist > max_distance_nm:
+                            continue
+
+            if is_candidate:
+                filtered_notams.append(notam)
+
         return filtered_notams
     
     def _is_notam_in_fir(self, notam: Dict[str, Any], fir_code: str) -> bool:
@@ -305,6 +324,43 @@ class FIRNotamFilter:
                     result['unknown_waypoints'].append(waypoint)
         
         return result
+
+    # ------------------------------------------------------------------
+    # 거리 기반 필터링 유틸리티 (Haversine, NM 단위)
+    # ------------------------------------------------------------------
+    def _haversine_nm(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """두 지점 간 대권거리를 해리 단위로 계산 (Haversine)."""
+        # 지구 반경 (NM)
+        R_nm = 3440.065
+
+        phi1 = math.radians(lat1)
+        phi2 = math.radians(lat2)
+        dphi = math.radians(lat2 - lat1)
+        dlambda = math.radians(lon2 - lon1)
+
+        a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        return R_nm * c
+
+    def _min_distance_to_route(
+        self,
+        lat: float,
+        lon: float,
+        route_coordinates: List[Tuple[float, float]],
+    ) -> Optional[float]:
+        """NOTAM 좌표와 항로 좌표 시퀀스 간 최소 거리(NM)를 계산."""
+        if not route_coordinates:
+            return None
+
+        min_dist = None
+        for rlat, rlon in route_coordinates:
+            try:
+                d = self._haversine_nm(lat, lon, rlat, rlon)
+            except Exception:
+                continue
+            if min_dist is None or d < min_dist:
+                min_dist = d
+        return min_dist
     
     def _count_total_relevant_notams(self, fir_notams: Dict[str, List], waypoint_notams: List) -> int:
         """

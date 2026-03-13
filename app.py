@@ -1,5 +1,6 @@
 """
-Smart NOTAM3 - 시간 필터링과 로컬시간 변환이 적용된 NOTAM 처리 애플리케이션
+SmartBriefer - Smart Briefing System
+OFP/NOTAM PDF 기반 비행 브리핑 및 NOTAM 분석 애플리케이션
 """
 
 # 플랫폼별 인코딩 설정
@@ -579,6 +580,25 @@ def _index_notams_by_airport(notams):
 def service_worker():
     """Service Worker - 오프라인에서 저장된 분석 결과 확인 지원"""
     return send_from_directory(app.static_folder, 'sw.js', mimetype='application/javascript')
+
+
+@app.route('/uploads/<path:filename>')
+def serve_upload(filename):
+    """uploads 폴더 파일 서빙 (차트 이미지 등)"""
+    safe_dir = os.path.abspath(app.config['UPLOAD_FOLDER'])
+    return send_from_directory(safe_dir, filename)
+
+
+@app.route('/view-charts')
+def view_charts():
+    """OFP 기상 차트 뷰어 (새 창) — query params: sigwx1, asc, cross"""
+    from flask import request as _req
+    chart_images = {
+        k: _req.args.get(k, '')
+        for k in ('sigwx1', 'asc', 'cross')
+        if _req.args.get(k)
+    }
+    return render_template('chart_viewer.html', chart_images=chart_images)
 
 
 @app.route('/')
@@ -1299,11 +1319,16 @@ def upload_file():
                 from flightplanextractor import extract_flight_plan_waypoints_from_text
                 waypoint_rows = extract_flight_plan_waypoints_from_text(text)
                 for row in waypoint_rows:
-                    flight_plan_waypoints.append({
+                    entry = {
                         "ident": (row.get("Waypoint") or "").strip().upper(),
-                        "lat": float(row["lat"]),
-                        "lon": float(row["lon"]),
-                    })
+                        "lat":   float(row["lat"]),
+                        "lon":   float(row["lon"]),
+                    }
+                    if row.get("fl") is not None:
+                        entry["fl"] = int(row["fl"])
+                    if row.get("actm") is not None:
+                        entry["actm"] = str(row["actm"])
+                    flight_plan_waypoints.append(entry)
                 if flight_plan_waypoints:
                     logger.info(f"Flight plan waypoint 좌표 추출: {len(flight_plan_waypoints)}개")
             except Exception as e:
@@ -1591,8 +1616,32 @@ def upload_file():
                 f"번역: {processing_times['translation']:.2f}s ({len(notams)}개, 평균 {processing_times['translation']/len(notams):.2f}s/개)"
             )
             
+            # ── PDF에서 기상 차트(sigwx/asc/cross) JPG 추출 ─────────────────
+            chart_images = {}   # {"sigwx1": "/uploads/XXX_sigwx1.jpg", ...}
+            try:
+                from find_and_analyze_cross_section import (
+                    find_weather_chart_pages_before_notam,
+                    export_cross_chart_page_to_jpg,
+                )
+                _base = os.path.splitext(os.path.basename(filepath))[0]
+                _pages = find_weather_chart_pages_before_notam(filepath)
+                for _label in ("sigwx1", "asc", "cross"):
+                    if _label not in _pages:
+                        continue
+                    _out = os.path.join(app.config['UPLOAD_FOLDER'],
+                                        f"{_base}_{_label}.jpg")
+                    _path = export_cross_chart_page_to_jpg(
+                        filepath, _pages[_label], output_path=_out)
+                    if _path and os.path.exists(_path):
+                        # 웹 URL 경로로 변환 (/uploads/파일명)
+                        chart_images[_label] = "/" + _path.replace("\\", "/")
+                        logger.info(f"차트 추출: {_label} → {_path}")
+            except Exception as e:
+                logger.warning(f"기상 차트 추출 실패: {e}")
+
             # 주요 터뷸런스 예상 구간 테이블 (OFP PDF에서 SR 5+ 구간 추출)
             major_turbulence_table = []
+            flight_data = []
             try:
                 from flightplanextractor import extract_flight_data_from_pdf, build_major_turbulence_table
                 flight_data = extract_flight_data_from_pdf(filepath, save_temp=False)
@@ -1602,7 +1651,70 @@ def upload_file():
                         logger.info(f"주요 터뷸런스 예상 구간: {len(major_turbulence_table)}개 구간")
             except Exception as e:
                 logger.warning(f"주요 터뷸런스 테이블 생성 실패: {e}")
-            
+
+            # ISIGMET + G-AIRMET 실시간 경로 분석 (aviationweather.gov)
+            sigmet_route_table = []
+            sigmet_checked = False   # API 호출 성공 여부
+            try:
+                from src.sigwx_analyzer import fetch_and_match_sigmet_for_route
+                from datetime import datetime as _dt, timezone as _tz
+                import re as _re
+                if flight_data:
+                    # OFP 날짜 파싱 (PDF 텍스트에서 "06/MAR/26" 형식 추출)
+                    ofp_date = None
+                    try:
+                        _month_map = {'JAN':1,'FEB':2,'MAR':3,'APR':4,'MAY':5,'JUN':6,
+                                      'JUL':7,'AUG':8,'SEP':9,'OCT':10,'NOV':11,'DEC':12}
+                        _dm = _re.search(r'(\d{2})/([A-Z]{3})/(\d{2,4})', text[:5000])
+                        if _dm:
+                            _day = int(_dm.group(1))
+                            _mon = _month_map.get(_dm.group(2), 1)
+                            _yr_raw = _dm.group(3)
+                            _yr = int(_yr_raw) if len(_yr_raw) == 4 else 2000 + int(_yr_raw)
+                            ofp_date = _dt(_yr, _mon, _day, 0, 0, 0, tzinfo=_tz.utc)
+                            logger.info(f"OFP 날짜 파싱: {ofp_date.date()}")
+                    except Exception as _e:
+                        logger.warning(f"OFP 날짜 파싱 실패: {_e}")
+
+                    sigmet_route_table = fetch_and_match_sigmet_for_route(
+                        flight_data, ofp_date=ofp_date)
+                    sigmet_checked = True
+                    logger.info(f"SIGMET 경로 영향 구간: {len(sigmet_route_table)}개")
+            except Exception as e:
+                logger.warning(f"SIGMET 경로 분석 실패: {e}")
+
+            # WAFS GRIB2 CAT 터뷸런스 경로 매칭
+            wafs_turb_table = []
+            wafs_turb_warn  = None
+            try:
+                from src.wafs_analyzer import match_wafs_to_route
+                if flight_data:
+                    def _fl_val(r):
+                        for k in ("fl", "FL (Flight Level)", "FL", "flight_level"):
+                            v = r.get(k)
+                            if v is not None:
+                                try:
+                                    return int(str(v).strip())
+                                except (ValueError, TypeError):
+                                    pass
+                        return None
+                    _cruise_fls = list({f for r in flight_data
+                                        for f in [_fl_val(r)] if f is not None})
+                    _wafs_rows = match_wafs_to_route(
+                        flight_data,
+                        etd_utc    = ofp_date,   # SIGMET 분석에서 이미 파싱
+                        cruise_fls = _cruise_fls or None,
+                    )
+                    # 경고 행 분리
+                    for row in _wafs_rows:
+                        if row.get("_warning_row"):
+                            wafs_turb_warn = row.get("warn_msg", "WAFS 분석 경고")
+                        else:
+                            wafs_turb_table.append(row)
+                    logger.info(f"WAFS CAT 매칭: {len(wafs_turb_table)}개 구간")
+            except Exception as e:
+                logger.warning(f"WAFS CAT 경로 분석 실패: {e}")
+
             # 공항별 기상(TAF) 분석 테이블 (DEP/DEST/ALTN/REFILE/EDTO/ERA)
             airport_weather_table = []
             try:
@@ -1612,6 +1724,47 @@ def upload_file():
                     logger.info(f"공항별 기상 분석: {len(airport_weather_table)}개 공항")
             except Exception as e:
                 logger.warning(f"공항별 기상 분석 테이블 생성 실패: {e}")
+
+            # High Terrain 구간 테이블 (MSA > 10,000ft), ETP 요약, REFILE 연료 요약, Wind/Temp 기반 shear/역전 분석
+            high_terrain_table = []
+            etp_summary_table = []
+            refile_fuel_table = []
+            wind_shear_table = []
+            try:
+                from src.flight_plan_analyzer import (
+                    extract_high_terrain_waypoints,
+                    extract_all_airports_from_text,
+                    extract_etp_summaries,
+                    extract_refile_fuel_summaries,
+                    build_wind_shear_inversion_table_for_route,
+                )
+                _airports_info = extract_all_airports_from_text(text)
+                _etd = _airports_info.get("etd_time") or ""
+
+                high_terrain_table = extract_high_terrain_waypoints(text, etd_hhmm=_etd)
+                if high_terrain_table:
+                    logger.info(f"High Terrain 구간: {len(high_terrain_table)}개")
+
+                etp_summary_table = extract_etp_summaries(text, etd_hhmm=_etd)
+                if etp_summary_table:
+                    logger.info(f"ETP 요약: {len(etp_summary_table)}개")
+
+                # REFILE은 NOTAM 분리 블록과 무관하게 원문 전체에서 추출 (패키지 시 블록 경계로 누락 방지)
+                refile_text = pdf_converter.get_raw_pdf_text(filepath) if filepath else text
+                refile_fuel_table = extract_refile_fuel_summaries(refile_text)
+                if refile_fuel_table:
+                    logger.info(f"REFILE 연료 요약: {len(refile_fuel_table)}개")
+
+                # Wind/Temp 요약: 실제 운항 waypoint+FL 기준으로 분석
+                try:
+                    wind_shear_table = build_wind_shear_inversion_table_for_route(text, flight_data or [])
+                except NameError:
+                    # flight_data가 정의되지 않은 경우(추출 실패 등)에는 스킵
+                    wind_shear_table = []
+                if wind_shear_table:
+                    logger.info(f"Wind/Temp 역전·shear 구간: {len(wind_shear_table)}개")
+            except Exception as e:
+                logger.warning(f"High Terrain / ETP / Wind 분석 실패: {e}")
             
             # Q Route 비교 결과 (OFP vs ATS FPL) — 2nd plan 행 아래에 표시
             route_comparison = None
@@ -1625,6 +1778,7 @@ def upload_file():
                 if extracted_route and extracted_route.strip():
                     ofp_normalized = normalize_route(extracted_route)
                     ats_route = None
+                    ats_full_text = None
                     try:
                         with pdfplumber.open(filepath) as pdf:
                             page_texts = [(p.extract_text() or "") for p in pdf.pages]
@@ -1634,13 +1788,22 @@ def upload_file():
                             up = page_text.upper()
                             if "COPY OF ATS FPL" in up or "ATS FPL" in up or "(FPL-" in page_text:
                                 ats_route = extract_ats_fpl_route_from_page(page_text)
+                                # (FPL- ... ) 전문 추출 — 원본 줄바꿈 유지
+                                import re as _re
+                                fpl_m = _re.search(r'\(FPL-.+?\)', page_text, _re.DOTALL)
+                                if fpl_m:
+                                    # 각 줄의 앞뒤 공백만 제거하고 줄바꿈은 보존
+                                    ats_full_text = '\n'.join(
+                                        line.strip() for line in fpl_m.group(0).splitlines() if line.strip()
+                                    )
                                 if ats_route:
                                     break
                     except Exception as e2:
                         logger.warning(f"ATS FPL 페이지 스캔 실패: {e2}")
                     if ats_route:
                         route_comparison = compare_routes(extracted_route, ats_route)
-                        logger.info(f"Q Route 비교: 일치={route_comparison.get('match')}")
+                        route_comparison["ats_full_text"] = ats_full_text
+                        logger.info(f"Route 비교: 일치={route_comparison.get('match')}")
                     else:
                         # OFP만 있어도 블록 표시 (ATS 미추출 시 메시지로 안내)
                         route_comparison = {
@@ -1648,6 +1811,7 @@ def upload_file():
                             "ats_normalized": None,
                             "match": False,
                             "ats_not_found": True,
+                            "ats_full_text": ats_full_text,
                         }
             except Exception as e:
                 logger.warning(f"Q Route 비교 생성 실패: {e}")
@@ -1668,8 +1832,17 @@ def upload_file():
                                  flight_plan_fuel_time_table=flight_plan_fuel_time_table,
                                  flight_plan_weight_table=flight_plan_weight_table,
                                  major_turbulence_table=major_turbulence_table,
+                                 sigmet_route_table=sigmet_route_table,
+                                 sigmet_checked=sigmet_checked,
+                                 wafs_turb_table=wafs_turb_table,
+                                 wafs_turb_warn=wafs_turb_warn,
+                                 chart_images=chart_images,
                                  route_comparison=route_comparison,
-                                 airport_weather_table=airport_weather_table)
+                                 airport_weather_table=airport_weather_table,
+                                 high_terrain_table=high_terrain_table,
+                                 etp_summary_table=etp_summary_table,
+                                 refile_fuel_table=refile_fuel_table,
+                                 wind_shear_table=wind_shear_table)
         
         else:
             flash('허용되지 않는 파일 형식입니다. PDF 파일만 업로드 가능합니다.')
@@ -3536,7 +3709,7 @@ if __name__ == '__main__':
     
     # 로컬 주소 출력
     print("\n" + "="*60)
-    print(f"🚀 Smart NOTAM 애플리케이션이 시작되었습니다!")
+    print(f"🚀 SmartBriefer (Smart Briefing System)이 시작되었습니다!")
     print(f"📍 로컬 주소: http://localhost:{port}")
     print(f"📍 네트워크 주소: http://127.0.0.1:{port}")
     print("="*60)

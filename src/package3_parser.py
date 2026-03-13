@@ -8,7 +8,13 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 
-COORD_REGEX_STR = r"(?:[NS]\d{6}[EW]\d{7})|(?:\d{6}[NS]\d{7}[EW])"
+# 좌표 형식 지원:
+# - DDMMSSN DDDMMSSW (초 포함)
+# - DDMMN DDDMMW (초 미포함)
+COORD_REGEX_STR = (
+    r"(?:[NS]\d{6}[EW]\d{7})|(?:\d{6}[NS]\d{7}[EW])|"
+    r"(?:[NS]\d{4}[EW]\d{5})|(?:\d{4}[NS]\d{5}[EW])"
+)
 COORD_PATTERN = re.compile(COORD_REGEX_STR)
 CIRCLE_PATTERN = re.compile(
     rf"(?:A\s+)?CIRCLE\s+RADIUS\s+(\d+(?:\.\d+)?)\s*(NM|KM)\s+CENTERED\s+ON\s+({COORD_REGEX_STR})",
@@ -17,6 +23,11 @@ CIRCLE_PATTERN = re.compile(
 # 좌표에 공백이 있을 수 있는 경우를 위한 추가 패턴
 CIRCLE_PATTERN_WITH_SPACES = re.compile(
     rf"(?:A\s+)?CIRCLE\s+RADIUS\s+(\d+(?:\.\d+)?)\s*(NM|KM)\s+CENTERED\s+ON\s+(\d{{6}})\s*([NS])\s*(\d{{7}})\s*([EW])",
+    re.IGNORECASE,
+)
+# Package 3 / ICAO 형식: "WI A RADIUS OF 25NM OF 311414N1442648E" (RJJJ P0439 등)
+CIRCLE_PATTERN_RADIUS_OF = re.compile(
+    rf"(?:WI\s+A\s+)?RADIUS\s+OF\s+(\d+(?:\.\d+)?)\s*(NM|KM)\s+OF\s+({COORD_REGEX_STR})",
     re.IGNORECASE,
 )
 BUFFER_PATTERN = re.compile(r"BUFFER[^0-9]*?(\d+(?:\.\d+)?)\s*(NM|KM)", re.IGNORECASE)
@@ -28,16 +39,16 @@ NOTAM_BLOCK_PATTERN = re.compile(
     re.DOTALL | re.MULTILINE
 )
 
-# VOR/NDB out of service 패턴
+# VOR/NDB/VORTAC out of service 패턴
 NAVAID_OUT_OF_SERVICE_PATTERNS = [
     # 패턴 1: "VOR ABCDE OUT OF SERVICE" 또는 "VOR ABCDE U/S"
-    re.compile(r"\b(VOR|NDB|DME|ILS|TACAN)\s+([A-Z0-9]{2,5})\s+(?:IS\s+)?(?:OUT\s+OF\s+SERVICE|U/S|UNSERVICEABLE|NOT\s+AVAILABLE|UNAVAILABLE|UNAVBL)", re.IGNORECASE),
+    re.compile(r"\b(VOR|NDB|DME|ILS|TACAN|VORTAC)\s+([A-Z0-9]{2,5})\s+(?:IS\s+)?(?:OUT\s+OF\s+SERVICE|U/S|UNSERVICEABLE|NOT\s+AVAILABLE|UNAVAILABLE|UNAVBL)", re.IGNORECASE),
     # 패턴 2: "ABCDE VOR OUT OF SERVICE"
-    re.compile(r"\b([A-Z0-9]{2,5})\s+(VOR|NDB|DME|ILS|TACAN)\s+(?:IS\s+)?(?:OUT\s+OF\s+SERVICE|U/S|UNSERVICEABLE|NOT\s+AVAILABLE|UNAVAILABLE|UNAVBL)", re.IGNORECASE),
-    # 패턴 3: "VOR ABCDE WILL BE OUT OF SERVICE"
-    re.compile(r"\b(VOR|NDB|DME|ILS|TACAN)\s+([A-Z0-9]{2,5})\s+(?:WILL\s+BE\s+)?(?:OUT\s+OF\s+SERVICE|U/S|UNSERVICEABLE)", re.IGNORECASE),
+    re.compile(r"\b([A-Z0-9]{2,5})\s+(VOR|NDB|DME|ILS|TACAN|VORTAC)\s+(?:IS\s+)?(?:OUT\s+OF\s+SERVICE|U/S|UNSERVICEABLE|NOT\s+AVAILABLE|UNAVAILABLE|UNAVBL)", re.IGNORECASE),
+    # 패턴 3: "VOR ABCDE WILL BE OUT OF SERVICE" / "VORTAC(SOT) WILL BE UNSERVICEABLE" (RKRR Z0475 등)
+    re.compile(r"\b(VOR|NDB|DME|ILS|TACAN|VORTAC)\s*\(?([A-Z0-9]{2,5})\)?\s*(?:WILL\s+BE\s+)?(?:OUT\s+OF\s+SERVICE|U/S|UNSERVICEABLE)", re.IGNORECASE),
     # 패턴 4: "ABCDE VOR U/S" (간단한 형태)
-    re.compile(r"\b([A-Z0-9]{2,5})\s+(VOR|NDB|DME|ILS|TACAN)\s+U/S\b", re.IGNORECASE),
+    re.compile(r"\b([A-Z0-9]{2,5})\s+(VOR|NDB|DME|ILS|TACAN|VORTAC)\s+U/S\b", re.IGNORECASE),
 ]
 
 
@@ -105,14 +116,30 @@ class Package3ParseResult:
 
 def _dms_to_decimal(coord: str) -> Tuple[float, float]:
     coord = coord.strip().upper()
+    # 1) NS DDMMSS EW DDDMMSS
     match = re.match(r"([NS])(\d{2})(\d{2})(\d{2})([EW])(\d{3})(\d{2})(\d{2})", coord)
     if match:
         lat_dir, lat_deg, lat_min, lat_sec, lon_dir, lon_deg, lon_min, lon_sec = match.groups()
     else:
+        # 2) DDMMSSN DDDMMSSW
         match_alt = re.match(r"(\d{2})(\d{2})(\d{2})([NS])(\d{3})(\d{2})(\d{2})([EW])", coord)
-        if not match_alt:
-            raise ValueError(f"Invalid coordinate format: {coord}")
-        lat_deg, lat_min, lat_sec, lat_dir, lon_deg, lon_min, lon_sec, lon_dir = match_alt.groups()
+        if match_alt:
+            lat_deg, lat_min, lat_sec, lat_dir, lon_deg, lon_min, lon_sec, lon_dir = match_alt.groups()
+        else:
+            # 3) NS DDMM EW DDDMM (초 미포함)
+            match_no_sec = re.match(r"([NS])(\d{2})(\d{2})([EW])(\d{3})(\d{2})", coord)
+            if match_no_sec:
+                lat_dir, lat_deg, lat_min, lon_dir, lon_deg, lon_min = match_no_sec.groups()
+                lat_sec = "00"
+                lon_sec = "00"
+            else:
+                # 4) DDMMN DDDMMW (초 미포함)
+                match_no_sec_alt = re.match(r"(\d{2})(\d{2})([NS])(\d{3})(\d{2})([EW])", coord)
+                if not match_no_sec_alt:
+                    raise ValueError(f"Invalid coordinate format: {coord}")
+                lat_deg, lat_min, lat_dir, lon_deg, lon_min, lon_dir = match_no_sec_alt.groups()
+                lat_sec = "00"
+                lon_sec = "00"
     lat = int(lat_deg) + int(lat_min) / 60 + int(lat_sec) / 3600
     lon = int(lon_deg) + int(lon_min) / 60 + int(lon_sec) / 3600
     if lat_dir == "S":
@@ -265,7 +292,41 @@ def _parse_circle_areas(
         affected_routes = []
     areas: List[Package3Area] = []
     processed_coords = set()  # 중복 처리 방지
-    
+
+    # Package 3 / ICAO 형식: "WI A RADIUS OF 25NM OF 311414N1442648E" (RJJJ P0439 등)
+    for match in CIRCLE_PATTERN_RADIUS_OF.finditer(block):
+        radius_value, unit, coord = match.groups()
+        coord_normalized = coord.replace(" ", "").upper()
+        if coord_normalized in processed_coords:
+            continue
+        processed_coords.add(coord_normalized)
+        try:
+            radius_nm = float(radius_value)
+        except ValueError:
+            continue
+        unit = (unit or "NM").upper()
+        if unit == "KM":
+            radius_nm = radius_nm / 1.852
+        try:
+            center = _dms_to_decimal(coord_normalized)
+        except ValueError:
+            continue
+        areas.append(
+            Package3Area(
+                notam_id=notam_id,
+                geometry="circle",
+                coordinates=[center],
+                raw_coordinates=[coord_normalized],
+                radius_nm=radius_nm,
+                altitude_text=altitude_text,
+                restriction=restriction,
+                description=description,
+                is_buffer=False,
+                raw_notam_text=raw_notam_text,
+                affected_routes=affected_routes,
+            )
+        )
+
     # 첫 번째 패턴 시도 (공백 없는 좌표)
     for match in CIRCLE_PATTERN.finditer(block):
         radius_value, unit, coord = match.groups()
@@ -598,12 +659,12 @@ def _parse_navaid_out_of_service(
             
             groups = match.groups()
             if len(groups) >= 2:
-                # 패턴 1: "VOR ABCDE OUT OF SERVICE" (첫 번째 그룹이 타입, 두 번째가 식별자)
-                if groups[0] in ['VOR', 'NDB', 'DME', 'ILS', 'TACAN']:
+                # 패턴 1: "VOR ABCDE OUT OF SERVICE" / "VORTAC(SOT) WILL BE UNSERVICEABLE" (첫 번째 그룹이 타입, 두 번째가 식별자)
+                if groups[0].upper() in ('VOR', 'NDB', 'DME', 'ILS', 'TACAN', 'VORTAC'):
                     navaid_type = groups[0].upper()
                     navaid_ident = groups[1].upper()
                 # 패턴 2: "ABCDE VOR OUT OF SERVICE" (첫 번째 그룹이 식별자, 두 번째가 타입)
-                elif groups[1] in ['VOR', 'NDB', 'DME', 'ILS', 'TACAN']:
+                elif groups[1].upper() in ('VOR', 'NDB', 'DME', 'ILS', 'TACAN', 'VORTAC'):
                     navaid_ident = groups[0].upper()
                     navaid_type = groups[1].upper()
             
@@ -681,19 +742,34 @@ def _parse_package3_data(text: str) -> Package3ParseResult:
     return result
 
 
-def get_package3_data(temp_dir: Path) -> Package3ParseResult:
-    temp_dir = temp_dir or Path("temp")
-    temp_dir = Path(temp_dir)
-    latest_file = _find_latest_split_file(temp_dir)
-    if not latest_file or not latest_file.exists():
-        return Package3ParseResult()
-    try:
-        full_text = latest_file.read_text(encoding="utf-8", errors="ignore")
-    except Exception:
-        return Package3ParseResult()
+def get_package3_data(temp_dir: Path = None, package3_text: str = None) -> Package3ParseResult:
+    """
+    Package 3 데이터를 파싱하여 반환
     
-    package3_text = _extract_package3_text(full_text)
-    result = _parse_package3_data(package3_text)
+    Args:
+        temp_dir: temp 폴더 경로 (파일에서 읽을 때 사용)
+        package3_text: Package 3 텍스트 (직접 제공 시 우선 사용, Cloud Run 호환성)
+    
+    Returns:
+        Package3ParseResult: 파싱된 Package 3 데이터
+    """
+    # 텍스트가 직접 제공되면 우선 사용 (캐시 우선)
+    if package3_text:
+        result = _parse_package3_data(package3_text)
+    else:
+        # 파일에서 읽기
+        temp_dir = temp_dir or Path("temp")
+        temp_dir = Path(temp_dir)
+        latest_file = _find_latest_split_file(temp_dir)
+        if not latest_file or not latest_file.exists():
+            return Package3ParseResult()
+        try:
+            full_text = latest_file.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            return Package3ParseResult()
+        
+        package3_text = _extract_package3_text(full_text)
+        result = _parse_package3_data(package3_text)
     
     # NavData에서 VOR/NDB 좌표 조회
     import logging

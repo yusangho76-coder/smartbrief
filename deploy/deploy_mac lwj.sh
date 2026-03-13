@@ -14,14 +14,13 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # 프로젝트 루트로 이동
 cd "$PROJECT_ROOT"
 
-# --- 설정값 ---양호중
-# 새 GCR 프로젝트(smartbriefer)에 배포
-PROJECT_ID="smartnotam-476803"
+# --- 설정값 -- 이욱재
+PROJECT_ID="smartbriefer"
 REGION="asia-northeast3"               # 서울 권장
 REPO="smartnotam"                       # Artifact Registry 저장소명
-SERVICE="smartnotam4"                # Cloud Run 서비스명 (새로 생성)
-API_KEY="AIzaSyA7rf9lPi2h_0ff7hg2OpheObhhbRXRkxI"
-GRANTEE="user:yangs9508@gmail.com"
+SERVICE="smartnotam4"                   # Cloud Run 서비스명 (새로 생성)
+API_KEY="AIzaSyCZx6JusLHRwlTwli0qUuUhgi_O3OmCImY"
+GRANTEE="user:wookjlee207@gmail.com"
 
 # 색상 정의
 CYAN='\033[0;36m'
@@ -241,7 +240,18 @@ echo -e "${GREEN}✅ 계정 설정 확인: $(gcloud config get-value account 2>/
 echo -e "${GREEN}✅ 자격 증명 확인 완료${NC}"
 
 echo -e "\n${CYAN}[2/9] 필수 API 활성화${NC}"
+# 프로젝트 설정 강제 확인 (API 활성화 전에 반드시 올바른 프로젝트로 설정)
 verify_project
+force_set_project $PROJECT_ID
+export CLOUDSDK_CORE_PROJECT=$PROJECT_ID
+# 최종 프로젝트 확인
+FINAL_CHECK=$(gcloud config get-value project 2>/dev/null)
+if [ "$FINAL_CHECK" != "$PROJECT_ID" ]; then
+    echo -e "${RED}❌ 프로젝트 설정 실패! 현재: $FINAL_CHECK, 목표: $PROJECT_ID${NC}"
+    echo -e "${YELLOW}수동으로 프로젝트를 설정하세요: gcloud config set project $PROJECT_ID${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ 프로젝트 최종 확인: $PROJECT_ID${NC}"
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com $GCLOUD_PROJECT_FLAG
 
 echo -e "\n${CYAN}[3/9] Artifact Registry 리포지토리 생성(존재 시 무시)${NC}"
@@ -343,11 +353,20 @@ gcloud run services update $SERVICE \
 
 echo -e "\n${CYAN}[8/9] 실행 권한 부여(roles/run.invoker)${NC}"
 verify_project
+# 특정 사용자에게 권한 부여
 gcloud run services add-iam-policy-binding $SERVICE \
   --region $REGION \
   --member="$GRANTEE" \
   --role="roles/run.invoker" \
   $GCLOUD_PROJECT_FLAG
+
+# 모든 사용자(비인증 포함)에게 접근 허용 - Forbidden 오류 방지
+echo -e "${YELLOW}공개 접근 권한 부여 (allUsers)...${NC}"
+gcloud run services add-iam-policy-binding $SERVICE \
+  --region $REGION \
+  --member="allUsers" \
+  --role="roles/run.invoker" \
+  $GCLOUD_PROJECT_FLAG 2>/dev/null || echo -e "${YELLOW}⚠️  allUsers 권한 부여 실패 - 조직 정책 제한일 수 있습니다. 아래 수동 해결 방법을 확인하세요.${NC}"
 
 URL=$(gcloud run services describe $SERVICE --region $REGION --format="value(status.url)" $GCLOUD_PROJECT_FLAG)
 

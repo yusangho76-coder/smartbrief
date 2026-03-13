@@ -18,7 +18,7 @@ cd "$PROJECT_ROOT"
 PROJECT_ID="sh-smartnotam3"
 REGION="asia-northeast3"               # 서울 권장
 REPO="smartnotam2"                 # Artifact Registry 저장소명
-SERVICE="smartnotam2"                    # Cloud Run 서비스명
+SERVICE="smartnotam-ysh"                    # Cloud Run 서비스명
 API_KEY="AIzaSyBhm5_WpN9AEHopuLRqWJUnNlUsVgX-ie0"
 GRANTEE="user:yusangho76@gmail.com"
 

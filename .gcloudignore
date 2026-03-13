@@ -4,6 +4,10 @@
 .gitignore
 .gitattributes
 
+# 대용량/캐시 (업로드 408 타임아웃 방지)
+.herbie/
+.venv/
+
 # Python 관련
 __pycache__/
 *.py[cod]
@@ -55,9 +59,10 @@ cache/
 *.tmp
 *.temp
 
-# 테스트 파일
+# 테스트/결과 파일
 tests/
 *_test.py
+saved_results/
 
 # 문서
 README.md

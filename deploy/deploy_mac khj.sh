@@ -14,14 +14,16 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # 프로젝트 루트로 이동
 cd "$PROJECT_ROOT"
 
-# --- 설정값 ---양호중
-# 새 GCR 프로젝트(smartbriefer)에 배포
-PROJECT_ID="smartnotam-476803"
+# --- 설정값 (wdh: smartnotam-482202 / smilewdhpb만 사용) ---
+PROJECT_ID="smartnotam-487705"
 REGION="asia-northeast3"               # 서울 권장
-REPO="smartnotam"                       # Artifact Registry 저장소명
-SERVICE="smartnotam4"                # Cloud Run 서비스명 (새로 생성)
-API_KEY="AIzaSyA7rf9lPi2h_0ff7hg2OpheObhhbRXRkxI"
-GRANTEE="user:yangs9508@gmail.com"
+REPO="smartnotam-repo"                 # Artifact Registry 저장소명
+SERVICE="smartnotam"                    # Cloud Run 서비스명
+API_KEY="AIzaSyDZ3TK4LrOO27LQGSqHOp8EJBS7IGnQ19c"
+GRANTEE="user:khj101411@gmail.com"
+
+# 스크립트에서 지정한 프로젝트만 사용 (쉘의 CLOUDSDK_CORE_PROJECT 덮어씀)
+export CLOUDSDK_CORE_PROJECT="$PROJECT_ID"
 
 # 색상 정의
 CYAN='\033[0;36m'
@@ -241,8 +243,39 @@ echo -e "${GREEN}✅ 계정 설정 확인: $(gcloud config get-value account 2>/
 echo -e "${GREEN}✅ 자격 증명 확인 완료${NC}"
 
 echo -e "\n${CYAN}[2/9] 필수 API 활성화${NC}"
+# 프로젝트 설정 강제 확인 (API 활성화 전에 반드시 올바른 프로젝트로 설정)
 verify_project
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com $GCLOUD_PROJECT_FLAG
+force_set_project $PROJECT_ID
+export CLOUDSDK_CORE_PROJECT=$PROJECT_ID
+# 최종 프로젝트 확인
+FINAL_CHECK=$(gcloud config get-value project 2>/dev/null)
+if [ "$FINAL_CHECK" != "$PROJECT_ID" ]; then
+    echo -e "${RED}❌ 프로젝트 설정 실패! 현재: $FINAL_CHECK, 목표: $PROJECT_ID${NC}"
+    echo -e "${YELLOW}수동으로 프로젝트를 설정하세요: gcloud config set project $PROJECT_ID${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ 프로젝트 최종 확인: $PROJECT_ID${NC}"
+# API 호출 직전 프로젝트 재확인 (다른 프로젝트로 호출되는 것 방지)
+export CLOUDSDK_CORE_PROJECT=$PROJECT_ID
+export GCLOUD_PROJECT=$PROJECT_ID
+GCLOUD_PROJECT_FLAG="--project=$PROJECT_ID"
+CURRENT_FOR_API=$(gcloud config get-value project 2>/dev/null || echo "")
+if [ "$CURRENT_FOR_API" != "$PROJECT_ID" ]; then
+    echo -e "${YELLOW}⚠️  프로젝트 불일치: $CURRENT_FOR_API → $PROJECT_ID (강제 재설정)${NC}"
+    force_set_project "$PROJECT_ID"
+fi
+echo -e "${CYAN}API 활성화 대상 프로젝트: ${GREEN}$PROJECT_ID${NC}"
+if ! gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com $GCLOUD_PROJECT_FLAG 2>&1; then
+    echo ""
+    echo -e "${RED}❌ API 활성화 실패 (권한 없음)${NC}"
+    echo -e "${YELLOW}현재 로그인 계정이 프로젝트 [$PROJECT_ID] 에 대한 권한이 없습니다.${NC}"
+    echo -e "${CYAN}해결 방법:${NC}"
+    echo -e "  1) 이 프로젝트 소유자라면: gcloud auth login 으로 올바른 계정으로 로그인"
+    echo -e "  2) 다른 사람 프로젝트라면: 본인 GCP 프로젝트 ID로 위 PROJECT_ID 를 수정 (18번째 줄 근처)"
+    echo -e "  3) 프로젝트 소유자에게 $EXPECTED_EMAIL 계정에 '편집자' 또는 '소유자' 권한 요청"
+    echo -e "현재 계정: $(gcloud config get-value account 2>/dev/null || echo '없음')"
+    exit 1
+fi
 
 echo -e "\n${CYAN}[3/9] Artifact Registry 리포지토리 생성(존재 시 무시)${NC}"
 verify_project
@@ -260,6 +293,35 @@ gcloud artifacts repositories describe $REPO --location=$REGION $GCLOUD_PROJECT_
 
 echo -e "\n${CYAN}[4/9] 이미지 빌드 & 푸시 (Cloud Build)${NC}"
 verify_project
+
+# Cloud Build 실행 계정(Compute 기본 SA) 권한: GCS 버킷 + Artifact Registry 푸시 + Logging
+BUILD_BUCKET="${PROJECT_ID}_cloudbuild"
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)' 2>/dev/null || true)
+if [ -n "$PROJECT_NUMBER" ]; then
+    COMPUTE_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+    echo -e "${CYAN}Cloud Build 서비스 계정 권한 설정: $COMPUTE_SA${NC}"
+    # 1) GCS 버킷 읽기 (소스 업로드/접근)
+    if gsutil iam ch "serviceAccount:${COMPUTE_SA}:objectViewer" "gs://${BUILD_BUCKET}" 2>/dev/null; then
+        echo -e "  ${GREEN}✅ 버킷 권한${NC}"
+    else
+        gcloud storage buckets add-iam-policy-binding "gs://${BUILD_BUCKET}" \
+            --member="serviceAccount:${COMPUTE_SA}" --role="roles/storage.objectViewer" 2>/dev/null && echo -e "  ${GREEN}✅ 버킷 권한${NC}" || true
+    fi
+    # 2) Artifact Registry 푸시 (이미지 업로드) - uploadArtifacts 권한
+    if gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+        --member="serviceAccount:${COMPUTE_SA}" \
+        --role="roles/artifactregistry.writer" \
+        --quiet 2>/dev/null; then
+        echo -e "  ${GREEN}✅ Artifact Registry 쓰기${NC}"
+    fi
+    # 3) Cloud Logging 로그 쓰기 (빌드 로그)
+    if gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+        --member="serviceAccount:${COMPUTE_SA}" \
+        --role="roles/logging.logWriter" \
+        --quiet 2>/dev/null; then
+        echo -e "  ${GREEN}✅ Logging 쓰기${NC}"
+    fi
+fi
 
 # 프로젝트 루트에서 실행 (Dockerfile, requirements.txt 등이 있는 곳)
 cd "$PROJECT_ROOT"
@@ -343,11 +405,20 @@ gcloud run services update $SERVICE \
 
 echo -e "\n${CYAN}[8/9] 실행 권한 부여(roles/run.invoker)${NC}"
 verify_project
+# 특정 사용자에게 권한 부여
 gcloud run services add-iam-policy-binding $SERVICE \
   --region $REGION \
   --member="$GRANTEE" \
   --role="roles/run.invoker" \
   $GCLOUD_PROJECT_FLAG
+
+# 모든 사용자(비인증 포함)에게 접근 허용 - Forbidden 오류 방지
+echo -e "${YELLOW}공개 접근 권한 부여 (allUsers)...${NC}"
+gcloud run services add-iam-policy-binding $SERVICE \
+  --region $REGION \
+  --member="allUsers" \
+  --role="roles/run.invoker" \
+  $GCLOUD_PROJECT_FLAG 2>/dev/null || echo -e "${YELLOW}⚠️  allUsers 권한 부여 실패 - 조직 정책 제한일 수 있습니다. 아래 수동 해결 방법을 확인하세요.${NC}"
 
 URL=$(gcloud run services describe $SERVICE --region $REGION --format="value(status.url)" $GCLOUD_PROJECT_FLAG)
 

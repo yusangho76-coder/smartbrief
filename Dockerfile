@@ -5,9 +5,11 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # 시스템 패키지 업데이트 및 필요한 패키지 설치
+# poppler-utils: pdf2image(기상 차트 SigWx/ASC/Cross → JPG 추출) 필수
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Python 의존성 파일 복사

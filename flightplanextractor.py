@@ -105,12 +105,25 @@ def extract_flight_plan_waypoints_from_text(full_text: str) -> List[Dict[str, ob
         if wp in invalid_keywords or len(wp) < 2:
             i += 1
             continue
-        if not (re.match(r"^\d{2}N\d{2}", wp) or re.match(r"^[A-Z]+\d+", wp) or (wp.isalpha() and len(wp) >= 2)):
+        if not (re.match(r"^\d{2}[NSEW]\d{2}", wp) or re.match(r"^[A-Z]+\d+", wp) or (wp.isalpha() and len(wp) >= 2)):
             i += 1
             continue
         lat, lon = _lat(parts), _lon(next_parts)
         if lat is not None and lon is not None:
-            result.append({"Waypoint": wp, "lat": lat, "lon": lon})
+            # FL 파싱: OFP 라인 4번째 필드 (DIST LATITUDE MC FL ...)
+            fl = None
+            if len(parts) > 4:
+                fl_cand = parts[4]
+                if fl_cand.isdigit() and 100 <= int(fl_cand) <= 600:
+                    fl = int(fl_cand)
+            # ACTM 파싱: next_parts에 "HH.MM" 형식이 있으면 추출
+            actm = None
+            for tok in next_parts[1:]:
+                if re.match(r"^\d{2}\.\d{2}$", tok):
+                    actm = tok
+                    break
+            result.append({"Waypoint": wp, "lat": lat, "lon": lon,
+                           "fl": fl, "actm": actm})
         i += 2
     return result
 
@@ -377,8 +390,8 @@ def extract_flight_data_from_pdf(pdf_path: str, save_temp: bool = True) -> List[
                     # 제외: Page, TO, TC, FIR, /, ---, CLB, DSC 등
                     invalid_keywords = ['Page', 'TO', 'TC', 'FIR', '/', '---', 'CLB', 'DSC', 'ANCHORAGE', 'OCEANIC', 'INCHEON', 'SENDAI', 'NIIGATA', 'YECHEON', 'POHANG', 'FUKUOKA']
                     
-                    # 좌표 형식 체크 (57N60, 57N70 등)
-                    is_coordinate = re.match(r'^\d{2}N\d{2}', waypoint_candidate)
+                    # 좌표 형식 체크: 57N60, 57N70 등 (N 기반) 또는 48E80, 48W80 등 (E/W 경도 기반)
+                    is_coordinate = re.match(r'^\d{2}[NSEW]\d{2}', waypoint_candidate)
                     # 알파벳+숫자 형식 체크 (EEP1, EXP1, ETP1 등)
                     is_alphanumeric = re.match(r'^[A-Z]+\d+', waypoint_candidate)
                     # 알파벳만 체크 (TREEL, UQQ, NATES, NIKLL 등 - N으로 시작해도 허용)
@@ -1152,26 +1165,15 @@ def analyze_turbulence_with_gemini(pdf_path: str, flight_data: List[Dict[str, st
     if not api_key:
         return "⚠️ Gemini API 키가 설정되지 않았습니다. GEMINI_API_KEY 환경 변수를 설정하세요."
     
-    # SIGWX 차트 분석 시도 (개선된 방법)
+    # SIGWX/ASC/Cross 차트 이미지 자동 분석 비활성화
+    # (OpenCV 색상·경로 추출 및 Google Vision 모두 실패 이력으로, API 기반 분석만 사용)
     sigwx_analysis = {}
-    try:
-        from src.sigwx_analyzer import analyze_sigwx_chart_enhanced, find_sigwx_pages
-        
-        sigwx_pages = find_sigwx_pages(pdf_path)
-        if sigwx_pages:
-            # 첫 번째 SIGWX 페이지 분석
-            sigwx_analysis = analyze_sigwx_chart_enhanced(
-                pdf_path, flight_data, sigwx_pages[0]
-            )
-            print(f"✅ SIGWX 차트 분석 완료: {len(sigwx_analysis)}개 waypoint 분석됨")
-        else:
-            print("ℹ️ SIGWX 차트를 찾을 수 없습니다. 기존 방식으로 분석을 계속합니다.")
-    except ImportError as e:
-        print(f"⚠️ SIGWX 분석 모듈을 불러올 수 없습니다 (계속 진행): {e}")
-    except Exception as e:
-        print(f"⚠️ SIGWX 차트 분석 중 오류 (계속 진행): {e}")
-        import traceback
-        traceback.print_exc()
+    # try:
+    #     from src.sigwx_analyzer import analyze_sigwx_chart_enhanced, find_sigwx_pages
+    #     sigwx_pages = find_sigwx_pages(pdf_path)
+    #     if sigwx_pages:
+    #         sigwx_analysis = analyze_sigwx_chart_enhanced(pdf_path, flight_data, sigwx_pages[0])
+    # except Exception as e: ...
     
     # ISIGMET API 데이터 가져오기 (실시간 기상 경보)
     isigmet_data = []
@@ -1428,7 +1430,10 @@ def analyze_turbulence_with_gemini(pdf_path: str, flight_data: List[Dict[str, st
             if sigwx_text == "\n**SIGWX 차트 분석 결과 (이미지 처리 + 좌표 기반 매핑):**\n":
                 sigwx_text += "기상 현상이 발견되지 않았습니다.\n"
         else:
-            sigwx_text = "SIGWX 차트 분석 결과가 없습니다.\n"
+            sigwx_text = (
+                "SIGWX 차트 이미지 자동 분석은 사용하지 않습니다 (OpenCV/Vision 실패 이력). "
+                "OFP 기상 차트는 참고용으로만 제공되며, 터뷸런스·기상은 SIGMET/G-AIRMET 및 WAFS 분석 결과를 참고하세요.\n"
+            )
         sigwx_available = bool(sigwx_analysis)
         
         # ISIGMET API 데이터 포맷팅 (실시간 기상 경보)

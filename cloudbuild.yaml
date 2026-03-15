@@ -1,10 +1,11 @@
 # Cloud Build 트리거용: GitHub push 시 이미지 빌드 → Artifact Registry 푸시 → Cloud Run 배포
-# 트리거에서 치환 변수 설정: _REGION, _REPO, _SERVICE (아래 기본값 = smartbrief 경로)
-# 이미지 경로: .../cloud-run-source-deploy/smartbrief/smartnotam3
+# _IMAGE_PATH: Artifact Registry 이미지 경로(슬래시 가능). _SERVICE: Cloud Run 서비스 이름(슬래시 불가, 63자 이내)
+# 이미지: .../cloud-run-source-deploy/smartbrief/smartnotam3  /  서비스 이름: smartnotam3
 substitutions:
   _REGION: asia-northeast3
   _REPO: cloud-run-source-deploy
-  _SERVICE: smartbrief/smartnotam3
+  _IMAGE_PATH: smartbrief/smartnotam3
+  _SERVICE: smartnotam3
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -15,9 +16,9 @@ steps:
     args:
       - build
       - -t
-      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE_PATH}:${SHORT_SHA}
       - -t
-      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:latest
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE_PATH}:latest
       - .
     id: build
 
@@ -25,14 +26,14 @@ steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE_PATH}:${SHORT_SHA}
     id: push-sha
     waitFor: [build]
 
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:latest
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE_PATH}:latest
     id: push-latest
     waitFor: [build]
 
@@ -44,7 +45,7 @@ steps:
       - deploy
       - ${_SERVICE}
       - --image
-      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE_PATH}:${SHORT_SHA}
       - --region
       - ${_REGION}
       - --platform
@@ -56,5 +57,5 @@ steps:
     waitFor: [push-sha]
 
 images:
-  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:${SHORT_SHA}
-  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_SERVICE}:latest
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE_PATH}:${SHORT_SHA}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/${_IMAGE_PATH}:latest

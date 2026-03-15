@@ -106,6 +106,23 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 app.secret_key = 'your-secret-key-here'
 app.register_blueprint(api_bp)
 
+
+@app.errorhandler(500)
+def internal_error(exception):
+    """500 발생 시 로그에 전체 traceback 기록. SHOW_SERVER_ERROR_DETAIL=1 이면 응답 본문에 표시 (디버깅용)."""
+    import traceback
+    # 요청 처리 중 발생한 예외는 exception 인자로 전달됨. 해당 traceback 사용 (format_exc()는 핸들러 진입 시 비어 있을 수 있음)
+    if exception is not None and getattr(exception, "__traceback__", None) is not None:
+        tb_lines = traceback.format_exception(type(exception), exception, exception.__traceback__)
+        tb = "".join(tb_lines)
+    else:
+        tb = traceback.format_exc() or "(no traceback)"
+    logger.exception("Internal Server Error: %s", exception)
+    if os.getenv("SHOW_SERVER_ERROR_DETAIL", "").strip().lower() in ("1", "true", "yes"):
+        return f"<pre>Internal Server Error\n\n{exception}\n\n{tb}</pre>", 500
+    return "Internal Server Error", 500
+
+
 # 중복 요청 방지를 위한 처리 상태 플래그 (사용자별 세션 기반)
 # 각 세션별로 독립적인 락을 관리하여 여러 사용자가 동시에 사용 가능하도록 함
 _processing_locks = {}  # {session_id: {'locked': bool, 'lock_time': datetime}}

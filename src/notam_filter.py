@@ -317,6 +317,19 @@ _SECURITY_FOOTER_PATTERNS = [
 ]
 
 
+def truncate_at_package_end(text: str) -> str:
+    """
+    NOTAM 원문에서 'END OF KOREAN AIR NOTAM PACKAGE' 이후(CFP, REFILE, 경로표 등)를 제거합니다.
+    같은 줄에 붙어 있거나 줄바꿈 누락으로 패키지 종료 문구 이후가 섞였을 때 원문이 길어지는 것을 방지합니다.
+    """
+    if not text:
+        return text
+    idx = re.search(r'\bEND\s+OF\s+KOREAN\s+AIR\s+NOTAM\s+PACKAGE\b', text, re.IGNORECASE)
+    if idx:
+        return text[:idx.start()].rstrip()
+    return text
+
+
 def strip_security_footer(text: str) -> str:
     """
     SECY / SECURITY INFORMATION 및 COMPANY ADVISORY 등 보안 부속 정보를 제거합니다.
@@ -2430,6 +2443,9 @@ Provide only the translation:"""
                                 # 패턴을 찾지 못하면 전체 섹션 사용 (fallback)
                                 full_original_text = section_stripped
                 
+                # Package 종료 문구 이후(CFP, REFILE, 경로표 등) 제거 — 원문이 한 줄에 붙었을 때 길게 나오는 현상 방지
+                full_original_text = truncate_at_package_end(full_original_text)
+
                 # full_original_text가 비어있거나 "D)"만 있으면 e_field_content 사용
                 if not full_original_text or full_original_text.strip() == 'D)' or len(full_original_text.strip()) < 5:
                     if e_field_content:
@@ -2728,6 +2744,9 @@ Provide only the translation:"""
                     if not e_field_content or len(e_field_content.strip()) < 40:
                         e_field_content = coad_body
                 
+                # Package 종료 문구 이후(CFP, REFILE, 경로표 등) 제거 — 원문이 한 줄에 붙었을 때 길게 나오는 현상 방지
+                original_content = truncate_at_package_end(original_content)
+
                 # original_content가 비어있거나 "D)"만 있으면 e_field_content 사용
                 if not original_content or original_content.strip() == 'D)' or len(original_content.strip()) < 5:
                     if e_field_content:

@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-title Smart NOTAM3 - 대한항공 NOTAM 처리 시스템
+title SmartBrief - 대한항공 NOTAM 처리 시스템
 
 echo ========================================
-echo    Smart NOTAM3 - 대한항공 NOTAM 처리 시스템
+echo    SmartBrief - 대한항공 NOTAM 처리 시스템
 echo ========================================
 echo.
 
@@ -79,7 +79,7 @@ if not exist ".env" (
 :: 애플리케이션 실행
 echo.
 echo ========================================
-echo    Smart NOTAM3 애플리케이션 시작
+echo    SmartBrief 애플리케이션 시작
 echo ========================================
 echo.
 echo 🌐 웹 브라우저에서 http://localhost:5005 로 접속하세요

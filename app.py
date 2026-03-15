@@ -1,5 +1,5 @@
 """
-SmartBriefer - Smart Briefing System
+SmartBrief - Smart Briefing System
 OFP/NOTAM PDF 기반 비행 브리핑 및 NOTAM 분석 애플리케이션
 """
 
@@ -1683,59 +1683,63 @@ def upload_file():
             except Exception as e:
                 logger.warning(f"SIGMET 경로 분석 실패: {e}")
 
-            # WAFS GRIB2 CAT 터뷸런스 경로 매칭
+            # GFS(Ellrod) CAT 분석 비활성화 — 정확도 이슈로 결과 화면에서 제외
             wafs_turb_table = []
             wafs_turb_warn  = None
-            try:
-                from src.wafs_analyzer import match_wafs_to_route
-                if flight_data:
-                    def _fl_val(r):
-                        for k in ("fl", "FL (Flight Level)", "FL", "flight_level"):
-                            v = r.get(k)
-                            if v is not None:
-                                try:
-                                    return int(str(v).strip())
-                                except (ValueError, TypeError):
-                                    pass
-                        return None
-                    _cruise_fls = list({f for r in flight_data
-                                        for f in [_fl_val(r)] if f is not None})
-                    _wafs_rows = match_wafs_to_route(
-                        flight_data,
-                        etd_utc    = ofp_date,   # SIGMET 분석에서 이미 파싱
-                        cruise_fls = _cruise_fls or None,
-                    )
-                    # 경고 행 분리
-                    for row in _wafs_rows:
-                        if row.get("_warning_row"):
-                            wafs_turb_warn = row.get("warn_msg", "WAFS 분석 경고")
-                        else:
-                            wafs_turb_table.append(row)
-                    logger.info(f"WAFS CAT 매칭: {len(wafs_turb_table)}개 구간")
-            except Exception as e:
-                logger.warning(f"WAFS CAT 경로 분석 실패: {e}")
+            wafs_cat_disabled = True
 
-            # 공항별 기상(TAF) 분석 테이블 (DEP/DEST/ALTN/REFILE/EDTO/ERA)
+            # 공항별 기상(TAF) 분석 테이블 (DEP/DEST/ALTN/REFILE/EDTO/ERA) — ERA는 공항 필터 Package 2와 동일 소스 사용
             airport_weather_table = []
             try:
                 from src.flight_plan_analyzer import build_airport_weather_table
-                airport_weather_table = build_airport_weather_table(text)
+                airport_weather_table = build_airport_weather_table(
+                    text,
+                    package_airports=filtered_package_airports if filtered_package_airports else None,
+                )
                 if airport_weather_table:
                     logger.info(f"공항별 기상 분석: {len(airport_weather_table)}개 공항")
             except Exception as e:
                 logger.warning(f"공항별 기상 분석 테이블 생성 실패: {e}")
 
-            # High Terrain 구간 테이블 (MSA > 10,000ft), ETP 요약, REFILE 연료 요약, Wind/Temp 기반 shear/역전 분석
+            # REFILE 연료 요약 — 원문 PDF → text → temp split 파일 순으로 시도 (다른 단계 실패와 무관)
+            refile_fuel_table = []
+            try:
+                from src.flight_plan_analyzer import extract_refile_fuel_summaries
+                # 1) 원문 PDF 전체
+                if filepath:
+                    try:
+                        refile_text = pdf_converter.get_raw_pdf_text(filepath)
+                        refile_fuel_table = extract_refile_fuel_summaries(refile_text) if refile_text else []
+                    except Exception as _e:
+                        logger.debug(f"REFILE raw PDF 추출 스킵: {_e}")
+                # 2) 변환된 text (패키지 시 NOTAM 블록 join본)
+                if not refile_fuel_table and text and "REFILE FLT PLAN" in text.upper():
+                    refile_fuel_table = extract_refile_fuel_summaries(text)
+                # 3) temp에 저장된 split 파일 (pdf_converter와 동일 경로: 앱 루트 기준)
+                if not refile_fuel_table and filepath:
+                    _temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), app.config.get("TEMP_FOLDER", "temp"))
+                    _base = os.path.splitext(os.path.basename(filepath))[0]
+                    _split_path = os.path.join(_temp_dir, _base + "_split.txt")
+                    if os.path.isfile(_split_path):
+                        with open(_split_path, "r", encoding="utf-8") as _f:
+                            _split_content = _f.read()
+                        refile_fuel_table = extract_refile_fuel_summaries(_split_content)
+                        if refile_fuel_table:
+                            logger.info("REFILE 연료 요약: temp split 파일에서 추출")
+                if refile_fuel_table:
+                    logger.info(f"REFILE 연료 요약: {len(refile_fuel_table)}개")
+            except Exception as e:
+                logger.warning(f"REFILE 연료 요약 추출 실패: {e}")
+
+            # High Terrain 구간 테이블 (MSA > 10,000ft), ETP 요약, Wind/Temp 기반 shear/역전 분석
             high_terrain_table = []
             etp_summary_table = []
-            refile_fuel_table = []
             wind_shear_table = []
             try:
                 from src.flight_plan_analyzer import (
                     extract_high_terrain_waypoints,
                     extract_all_airports_from_text,
                     extract_etp_summaries,
-                    extract_refile_fuel_summaries,
                     build_wind_shear_inversion_table_for_route,
                 )
                 _airports_info = extract_all_airports_from_text(text)
@@ -1748,12 +1752,6 @@ def upload_file():
                 etp_summary_table = extract_etp_summaries(text, etd_hhmm=_etd)
                 if etp_summary_table:
                     logger.info(f"ETP 요약: {len(etp_summary_table)}개")
-
-                # REFILE은 NOTAM 분리 블록과 무관하게 원문 전체에서 추출 (패키지 시 블록 경계로 누락 방지)
-                refile_text = pdf_converter.get_raw_pdf_text(filepath) if filepath else text
-                refile_fuel_table = extract_refile_fuel_summaries(refile_text)
-                if refile_fuel_table:
-                    logger.info(f"REFILE 연료 요약: {len(refile_fuel_table)}개")
 
                 # Wind/Temp 요약: 실제 운항 waypoint+FL 기준으로 분석
                 try:
@@ -1782,22 +1780,33 @@ def upload_file():
                     try:
                         with pdfplumber.open(filepath) as pdf:
                             page_texts = [(p.extract_text() or "") for p in pdf.pages]
+                        # (FPL- 블록이 페이지를 넘어갈 수 있으므로 전체 텍스트에서 괄호 균형으로 추출
+                        full_pdf_text = "\n".join(page_texts)
+                        idx = full_pdf_text.find("(FPL-")
+                        if idx >= 0:
+                            start = idx
+                            depth = 0
+                            for i in range(start, len(full_pdf_text)):
+                                if full_pdf_text[i] == "(":
+                                    depth += 1
+                                elif full_pdf_text[i] == ")":
+                                    depth -= 1
+                                    if depth == 0:
+                                        ats_full_text = "\n".join(
+                                            line.strip() for line in full_pdf_text[start : i + 1].splitlines() if line.strip()
+                                        )
+                                        break
+                        # 경로 추출은 (FPL-) 블록 또는 각 페이지에서 시도
                         for page_text in page_texts:
                             if not page_text:
                                 continue
                             up = page_text.upper()
                             if "COPY OF ATS FPL" in up or "ATS FPL" in up or "(FPL-" in page_text:
                                 ats_route = extract_ats_fpl_route_from_page(page_text)
-                                # (FPL- ... ) 전문 추출 — 원본 줄바꿈 유지
-                                import re as _re
-                                fpl_m = _re.search(r'\(FPL-.+?\)', page_text, _re.DOTALL)
-                                if fpl_m:
-                                    # 각 줄의 앞뒤 공백만 제거하고 줄바꿈은 보존
-                                    ats_full_text = '\n'.join(
-                                        line.strip() for line in fpl_m.group(0).splitlines() if line.strip()
-                                    )
                                 if ats_route:
                                     break
+                        if not ats_route and ats_full_text:
+                            ats_route = extract_ats_fpl_route_from_page(ats_full_text)
                     except Exception as e2:
                         logger.warning(f"ATS FPL 페이지 스캔 실패: {e2}")
                     if ats_route:
@@ -1836,6 +1845,7 @@ def upload_file():
                                  sigmet_checked=sigmet_checked,
                                  wafs_turb_table=wafs_turb_table,
                                  wafs_turb_warn=wafs_turb_warn,
+                                 wafs_cat_disabled=wafs_cat_disabled,
                                  chart_images=chart_images,
                                  route_comparison=route_comparison,
                                  airport_weather_table=airport_weather_table,
@@ -3542,7 +3552,7 @@ def download_html(filename):
 
 if __name__ == '__main__':
     # PID 파일 경로
-    PID_FILE = '.smartnotam.pid'
+    PID_FILE = '.smartbrief.pid'
     
     # 종료 시 정리 함수
     def cleanup():
@@ -3709,7 +3719,7 @@ if __name__ == '__main__':
     
     # 로컬 주소 출력
     print("\n" + "="*60)
-    print(f"🚀 SmartBriefer (Smart Briefing System)이 시작되었습니다!")
+    print(f"🚀 SmartBrief (Smart Briefing System)이 시작되었습니다!")
     print(f"📍 로컬 주소: http://localhost:{port}")
     print(f"📍 네트워크 주소: http://127.0.0.1:{port}")
     print("="*60)

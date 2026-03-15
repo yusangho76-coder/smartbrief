@@ -41,7 +41,7 @@ gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudb
 Write-Step "Ensuring Artifact Registry repo exists: $REPO in $REGION"
 $repoExists = gcloud artifacts repositories describe $REPO --location=$REGION --format="value(name)" 2>$null
 if (-not $repoExists) {
-    gcloud artifacts repositories create $REPO --repository-format=docker --location=$REGION --description="SmartNOTAM images" | Out-Null
+    gcloud artifacts repositories create $REPO --repository-format=docker --location=$REGION --description="SmartBrief images" | Out-Null
 }
 
 $timestamp = Get-Date -Format "yyyyMMddHHmmss"

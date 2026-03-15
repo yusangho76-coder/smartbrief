@@ -1,6 +1,6 @@
 """
 지도 생성 및 시각화 유틸리티 모듈
-참조: SmartNOTAMgemini_GCR/map_utils.py
+참조: SmartBrief/map_utils.py
 """
 
 import folium

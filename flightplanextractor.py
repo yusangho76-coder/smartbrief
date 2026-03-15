@@ -1557,74 +1557,9 @@ def analyze_turbulence_with_gemini(pdf_path: str, flight_data: List[Dict[str, st
         else:
             isigmet_text = "ISIGMET 실시간 기상 경보 데이터가 없습니다.\n"
 
-        # GFS 기반 파생지표 요약 (Herbie) — 당분간 비활성화 (다운로드 지연 방지)
-        # 켜려면 환경변수: ENABLE_GFS_ANALYSIS=true
+        # GFS(Herbie) 분석 비활성화 — 정확도·속도·용량 이슈로 제거
         gfs_summary_markdown = ""
-        gfs_status = ""
-        if os.getenv("ENABLE_GFS_ANALYSIS", "false").lower() == "true":
-            try:
-                from src.gfs_weather_analyzer import build_gfs_summary_markdown, GfsWaypoint
-                from src.sigwx_analyzer import get_waypoint_coordinates_with_timing
-
-                waypoints_with_coords = get_waypoint_coordinates_with_timing(flight_data)
-                coords_map = {wp.get('waypoint'): wp for wp in waypoints_with_coords if wp.get('waypoint')}
-
-                candidate_names = []
-                for seg in turbulence_segments:
-                    if seg.get('start_waypoint'):
-                        candidate_names.append(seg['start_waypoint'])
-                    if seg.get('end_waypoint'):
-                        candidate_names.append(seg['end_waypoint'])
-                if not candidate_names:
-                    candidate_names = list(waypoint_time_dt.keys())[:10]
-
-                seen = set()
-                unique_names = []
-                for name in candidate_names:
-                    if name and name not in seen:
-                        seen.add(name)
-                        unique_names.append(name)
-
-                gfs_waypoints = []
-                for name in unique_names:
-                    coord = coords_map.get(name)
-                    if not coord:
-                        continue
-                    fl_value = waypoint_fl_map.get(name)
-                    if fl_value is None:
-                        continue
-                    gfs_waypoints.append(GfsWaypoint(
-                        name=name,
-                        lat=coord.get('lat'),
-                        lon=coord.get('lon'),
-                        fl=fl_value,
-                        eta_dt=waypoint_time_dt.get(name)
-                    ))
-
-                if not gfs_waypoints:
-                    for name, fl_value in waypoint_fl_map.items():
-                        if fl_value is None:
-                            continue
-                        coord = coords_map.get(name)
-                        if not coord:
-                            continue
-                        gfs_waypoints.append(GfsWaypoint(
-                            name=name,
-                            lat=coord.get('lat'),
-                            lon=coord.get('lon'),
-                            fl=fl_value,
-                            eta_dt=waypoint_time_dt.get(name)
-                        ))
-                        if len(gfs_waypoints) >= 10:
-                            break
-
-                gfs_summary_markdown, gfs_status = build_gfs_summary_markdown(gfs_waypoints)
-            except Exception as e:
-                gfs_summary_markdown = ""
-                gfs_status = f"오류: {str(e)}"
-        else:
-            gfs_status = "GFS 분석 비활성화 (ENABLE_GFS_ANALYSIS=true 로 활성화 가능)"
-            print("ℹ️ GFS 분석 스킵 (다운로드 없음). 켜려면 ENABLE_GFS_ANALYSIS=true 설정")
+        gfs_status = "GFS(Herbie) 분석 비활성화"
 
         # ISIGMET 요약을 waypoint 기준으로 정리 (구간별 표시용)
         isigmet_summary_by_waypoint = {}

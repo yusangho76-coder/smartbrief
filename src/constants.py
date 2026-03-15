@@ -1,6 +1,6 @@
 """
 항공 용어 및 상수 설정 파일
-참조: SmartNOTAMgemini_GCR/constants.py
+참조: SmartBrief/constants.py
 """
 
 # 번역하지 않을 용어 목록

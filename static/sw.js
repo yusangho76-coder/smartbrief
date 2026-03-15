@@ -1,5 +1,5 @@
-// SmartNOTAM3 Service Worker - 오프라인에서 저장된 분석 결과 확인 지원
-const CACHE_NAME = 'smartnotam-v1';
+// SmartBrief Service Worker - 오프라인에서 저장된 분석 결과 확인 지원
+const CACHE_NAME = 'smartbrief-v1';
 
 // 설치 시 캐시할 URL (앱 진입점)
 const urlsToCache = [
@@ -57,7 +57,7 @@ self.addEventListener('fetch', (event) => {
           // 메인 페이지 요청인데 캐시 없으면 index 대체 페이지
           if (event.request.mode === 'navigate') {
             return caches.match('/').then((indexCache) => indexCache || new Response(
-              '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SmartNOTAM - 오프라인</title></head><body><div style="padding:20px;font-family:sans-serif"><h1>오프라인 모드</h1><p>인터넷 연결을 확인해주세요.</p><p>저장된 분석 결과가 있다면, 온라인 상태에서 앱을 한 번 열어주시면 오프라인에서도 확인할 수 있습니다.</p></div></body></html>',
+              '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SmartBrief - 오프라인</title></head><body><div style="padding:20px;font-family:sans-serif"><h1>오프라인 모드</h1><p>인터넷 연결을 확인해주세요.</p><p>저장된 분석 결과가 있다면, 온라인 상태에서 앱을 한 번 열어주시면 오프라인에서도 확인할 수 있습니다.</p></div></body></html>',
               { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
             ));
           }

@@ -1,4 +1,4 @@
-# ===== Smart NOTAM - GCR/Cloud Run 원클릭 배포 스크립트 (PowerShell) =====
+# ===== SmartBrief - GCR/Cloud Run 원클릭 배포 스크립트 (PowerShell) =====
 # 요구: gcloud SDK 설치, 브라우저 로그인 가능 환경
 $ErrorActionPreference = "Stop"
 
@@ -23,7 +23,7 @@ try {
   gcloud artifacts repositories create $REPO `
     --repository-format=docker `
     --location=$REGION `
-    --description="Smart NOTAM images" | Out-Null
+    --description="SmartBrief images" | Out-Null
 } catch {
   Write-Host " - 이미 존재하거나 생성 스킵" -ForegroundColor Yellow
 }

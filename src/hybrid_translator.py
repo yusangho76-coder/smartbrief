@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 하이브리드 NOTAM 번역기
-SmartNOTAMgemini_GCR의 전문적인 기능 + 간단한 프롬프트
+SmartBrief 전문적인 기능 + 간단한 프롬프트
 """
 
 import os
@@ -17,7 +17,7 @@ load_dotenv()
 # 로깅 설정
 logger = logging.getLogger(__name__)
 
-# 번역하지 않을 용어 목록 (SmartNOTAMgemini_GCR 기반)
+# 번역하지 않을 용어 목록 (SmartBrief 기반)
 NO_TRANSLATE_TERMS = [
     "NOTAM", "NOTAMN", "NOTAMR", "NOTAMC", "TRIGGER NOTAM",
     "AIRAC", "AIP", "AIP SUP", "AIP AMDT",
@@ -38,7 +38,7 @@ NO_TRANSLATE_TERMS = [
     "MAINT", "OPR", "SVC", "THR", "TIL", "UFN"
 ]
 
-# 색상 스타일 적용 용어 (SmartNOTAMgemini_GCR 기반)
+# 색상 스타일 적용 용어 (SmartBrief 기반)
 RED_STYLE_TERMS = [
     'closed', 'close', 'closing', 'obstacle', 'obstacles', 'obstacle area',
     'obstruction', 'obstructions', 'restricted', 'prohibited', 'severe',

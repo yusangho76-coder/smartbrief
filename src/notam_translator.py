@@ -59,7 +59,7 @@ class NOTAMTranslator:
             'PERMANENT': '영구'
         }
         
-        # SmartNOTAMgemini_GCR 색상 스타일 용어
+        # SmartBrief 색상 스타일 용어
         self.red_style_terms = [
             'closed', 'close', 'closing','obstacle','obstacles','obstacle area','obstruction','obstructions',
             'restricted','prohibited','severe','severe weather','volcanic ash','volcanic ash cloud',
@@ -171,7 +171,7 @@ class NOTAMTranslator:
         return clean_text
 
     def apply_color_styles(self, text: str) -> str:
-        """텍스트에 색상 스타일을 적용합니다 (SmartNOTAMgemini_GCR 방식)"""
+        """텍스트에 색상 스타일을 적용합니다 (SmartBrief 방식)"""
         if not text:
             return text
         
@@ -317,7 +317,7 @@ class NOTAMTranslator:
         return False
 
     def _translate_with_gemini(self, text: str, target_lang: str) -> str:
-        """Gemini를 사용한 향상된 번역 (SmartNOTAMgemini_GCR 품질)"""
+        """Gemini를 사용한 향상된 번역 (SmartBrief 품질)"""
         try:
             # E 섹션만 추출
             e_section = self.extract_e_section(text)
@@ -327,7 +327,7 @@ class NOTAMTranslator:
             # TDM 트랙 NOTAM인지 확인
             is_tdm = self._is_tdm_track_notam(e_section)
             
-            # SmartNOTAMgemini_GCR의 정교한 번역 프롬프트 사용
+            # SmartBrief의 정교한 번역 프롬프트 사용
             if target_lang == "en":
                 # TDM 트랙 NOTAM은 특별 처리
                 if is_tdm:
@@ -482,7 +482,7 @@ Translated text:"""
         return translated
 
     def summarize_notam_with_gemini(self, original_text: str, english_translation: str, korean_translation: str) -> Dict:
-        """NOTAM 요약 생성 (SmartNOTAMgemini_GCR 품질)"""
+        """NOTAM 요약 생성 (SmartBrief 품질)"""
         try:
             if not self.gemini_enabled:
                 return {
@@ -490,7 +490,7 @@ Translated text:"""
                     'english_summary': 'Summary function not available'
                 }
 
-            # SmartNOTAMgemini_GCR의 정교한 요약 프롬프트 사용
+            # SmartBrief의 정교한 요약 프롬프트 사용
             english_prompt = f"""Summarize the following NOTAM in English, focusing on key information only:
 
 NOTAM Text:
@@ -830,7 +830,7 @@ NOTAM 원문:
         return None
     
     def translate_to_korean(self, text: str) -> str:
-        """텍스트를 한국어로 번역 (SmartNOTAMgemini_GCR 방식 + 약어 전처리)"""
+        """텍스트를 한국어로 번역 (SmartBrief 방식 + 약어 전처리)"""
         try:
             # HTML 태그 제거
             clean_text = self.remove_html_tags(text)
@@ -847,7 +847,7 @@ NOTAM 원문:
             return self.clean_text_formatting(self.remove_html_tags(text))
     
     def translate_to_english(self, text: str) -> str:
-        """텍스트를 영어로 번역 (SmartNOTAMgemini_GCR 방식 + 약어 전처리)"""
+        """텍스트를 영어로 번역 (SmartBrief 방식 + 약어 전처리)"""
         try:
             # HTML 태그 제거
             clean_text = self.remove_html_tags(text)
@@ -864,7 +864,7 @@ NOTAM 원문:
             return self.clean_text_formatting(self.remove_html_tags(text))
 
     def translate_notam_smart(self, text: str):
-        """NOTAM 텍스트를 영어와 한국어로 번역합니다 (SmartNOTAMgemini_GCR 방식)"""
+        """NOTAM 텍스트를 영어와 한국어로 번역합니다 (SmartBrief 방식)"""
         try:
             # 영어 번역
             english_translation = self.perform_translation_smart(text, "en")
@@ -888,14 +888,14 @@ NOTAM 원문:
             }
 
     def perform_translation_smart(self, text: str, target_lang: str):
-        """Gemini를 사용하여 NOTAM 번역 수행 (SmartNOTAMgemini_GCR 프롬프트)"""
+        """Gemini를 사용하여 NOTAM 번역 수행 (SmartBrief 프롬프트)"""
         try:
             # E 섹션만 추출
             e_section = self.extract_e_section(text)
             if not e_section:
                 return "번역할 내용이 없습니다."
 
-            # 번역 프롬프트 설정 (SmartNOTAMgemini_GCR 방식)
+            # 번역 프롬프트 설정 (SmartBrief 방식)
             if target_lang == "en":
                 prompt = f"""Analyze the following NOTAM for critical information regarding flight safety and operational impact. Identify any restrictions, hazards, or changes to facilities.
 
@@ -1044,7 +1044,7 @@ Translated text:"""
             return "번역 중 오류가 발생했습니다."
     
     def summarize_english(self, text: str) -> str:
-        """영어 요약 생성 (SmartNOTAMgemini_GCR 방식)"""
+        """영어 요약 생성 (SmartBrief 방식)"""
         try:
             if not self.gemini_enabled:
                 return apply_color_styles(text)
@@ -1052,7 +1052,7 @@ Translated text:"""
             # HTML 태그 제거
             clean_text = self.remove_html_tags(text)
             
-            # SmartNOTAMgemini_GCR의 영어 요약 프롬프트
+            # SmartBrief의 영어 요약 프롬프트
             prompt = f"""Summarize the following NOTAM in English, focusing on key information only:
 
 NOTAM Text:
@@ -1098,7 +1098,7 @@ Provide a brief summary that captures the essential information."""
             return clean_text
     
     def summarize_korean(self, text: str) -> str:
-        """한국어 요약 생성 (SmartNOTAMgemini_GCR 방식)"""
+        """한국어 요약 생성 (SmartBrief 방식)"""
         try:
             if not self.gemini_enabled:
                 return apply_color_styles(text)
@@ -1106,7 +1106,7 @@ Provide a brief summary that captures the essential information."""
             # HTML 태그 제거
             clean_text = self.remove_html_tags(text)
             
-            # SmartNOTAMgemini_GCR의 한국어 요약 프롬프트
+            # SmartBrief의 한국어 요약 프롬프트
             prompt = f"""다음 NOTAM을 한국어로 요약하되, 핵심 정보만 포함하도록 하세요:
 
 NOTAM 원문:

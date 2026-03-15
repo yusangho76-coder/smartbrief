@@ -10,8 +10,8 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: asia-northeast3
-  SERVICE: smartnotam
-  REPO: smartnotam-repo
+  SERVICE: smartbrief
+  REPO: smartbrief
 
 jobs:
   deploy:
@@ -49,6 +49,7 @@ jobs:
             --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE }}:latest \
             --region ${{ env.REGION }} \
             --platform managed \
+            --port 5005 \
             --allow-unauthenticated \
             --cpu 1 \
             --memory 2Gi \

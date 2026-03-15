@@ -284,7 +284,7 @@ class TimezoneAPI:
             # 최후 폴백: Nominatim
             url = 'https://nominatim.openstreetmap.org/search'
             params = {'q': f'{icao_code} airport', 'format': 'json', 'limit': 1}
-            headers = {'User-Agent': 'SmartNOTAM/1.0 (timezone lookup)'}
+            headers = {'User-Agent': 'SmartBrief/1.0 (timezone lookup)'}
             response = requests.get(url, params=params, headers=headers, timeout=self.timeout)
             if response.status_code == 200:
                 data = response.json()

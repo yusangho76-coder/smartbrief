@@ -1,4 +1,4 @@
-// Smart NOTAM 메인 JavaScript
+// SmartBrief 메인 JavaScript
 
 document.addEventListener('DOMContentLoaded', function() {
     // 파일 업로드 폼 처리

@@ -1,4 +1,4 @@
-// Smart NOTAM 결과 페이지 JavaScript
+// SmartBrief 결과 페이지 JavaScript
 
 let currentNotams = [];
 let currentMapData = [];

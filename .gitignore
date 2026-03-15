@@ -21,6 +21,9 @@ wheels/
 *.egg
 MANIFEST
 
+# Herbie GFS 캐시 (로컬용, 1.4GB+ — 레포/배포 제외)
+.herbie/
+
 # 가상환경
 venv/
 env/
@@ -58,6 +61,10 @@ cache/
 .env.development
 .env.production
 .env.*.local
+
+# 인증/키 파일 (레포에 올리지 않음)
+credentials/
+smartnotam-*.json
 
 # 테스트 및 결과 파일
 tests/

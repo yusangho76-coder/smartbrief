@@ -1039,22 +1039,47 @@ def extract_all_airports_from_text(text: str) -> Dict[str, Any]:
         if code not in out["edto_enroute"]:
             out["edto_enroute"].append(code)
 
-    # Package 2 header: "REFILE: PANC PAED" / "EDTO: RJCC PAKN" / "ERA: RJTT RJCC ..."
-    pkg2_refile = re.search(r"^REFILE:\s*(.+)$", text, re.MULTILINE)
+    # Package 2: ERA 공항은 "ERA: ..." 라인에서만 추출 (NOTAM 본문 전체 스캔 시 KORE/NOTA/PACK 등 단어 조각이 들어감 방지)
+    # Package 2 내 REFILE:/EDTO:/ERA: 라벨 블록 (라벨별 구분용)
+    def _pkg2_block(key: str) -> str:
+        """키로 시작하는 줄과, 다음 줄부터 다른 섹션(REFILE/EDTO/ERA:) 또는 빈 줄 전까지 이어붙임."""
+        m = re.search(r"^" + key + r":\s*(.+)$", text, re.MULTILINE)
+        if not m:
+            return ""
+        end_of_line = text.find("\n", m.end())
+        if end_of_line == -1:
+            end_of_line = len(text)
+        chunk = m.group(1).strip()
+        pos = end_of_line + 1
+        while pos < len(text):
+            line_end = text.find("\n", pos)
+            if line_end == -1:
+                line_end = len(text)
+            line = text[pos:line_end].strip()
+            if not line:
+                break
+            if re.match(r"^(REFILE|EDTO|ERA):", line, re.IGNORECASE):
+                break
+            chunk += " " + line
+            pos = line_end + 1
+        return chunk
+
+    pkg2_refile = _pkg2_block("REFILE")
     if pkg2_refile:
         dest_codes = {r["airport"] for r in out["refile"] if r.get("role") == "dest"}
-        for code in re.findall(r"[A-Z]{4}", pkg2_refile.group(1)):
+        for code in re.findall(r"[A-Z]{4}", pkg2_refile):
             if not any(r["airport"] == code for r in out["refile"]):
                 role = "dest" if code in dest_codes else "altn"
                 out["refile"].append({"airport": code, "decision_point": "", "role": role})
-    pkg2_edto = re.search(r"^EDTO:\s*(.+)$", text, re.MULTILINE)
+    pkg2_edto = _pkg2_block("EDTO")
     if pkg2_edto:
-        for code in re.findall(r"[A-Z]{4}", pkg2_edto.group(1)):
+        for code in re.findall(r"[A-Z]{4}", pkg2_edto):
             if code not in out["edto_enroute"]:
                 out["edto_enroute"].append(code)
-    pkg2_era = re.search(r"^ERA:\s*(.+)$", text, re.MULTILINE)
+    # ERA: 라인도 반영 (Package 2 섹션을 못 찾은 경우 또는 추가 공항)
+    pkg2_era = _pkg2_block("ERA")
     if pkg2_era:
-        for code in re.findall(r"[A-Z]{4}", pkg2_era.group(1)):
+        for code in re.findall(r"[A-Z]{4}", pkg2_era):
             if code not in out["era"]:
                 out["era"].append(code)
 
@@ -1409,17 +1434,29 @@ def _highlight_active_taf_section(raw_taf: str, target_hhmm: str) -> str:
     return f"{before}<strong class='fw-bold text-dark'>{middle}</strong>{after}"
 
 
-def build_airport_weather_table(text: str) -> List[Dict[str, str]]:
+def build_airport_weather_table(
+    text: str,
+    package_airports: Optional[Dict[str, List[str]]] = None,
+) -> List[Dict[str, str]]:
     """
-    OFP 전체 텍스트에서 DEP/DEST/ALTN/REFILE/EDTO 공항별 TAF를
+    OFP 전체 텍스트에서 DEP/DEST/ALTN/REFILE/EDTO/ERA 공항별 TAF를
     Aviation Weather Center API(aviationweather.gov)에서 실시간으로 가져와
     분석 테이블을 생성.
+
+    package_airports: 공항 필터 UI와 동일한 소스(notam_filter.extract_package_airports 결과).
+                      전달 시 ERA 행은 package_airports['package2']를 사용(필터 UI와 일치).
     Returns: [
         {"time_utc": "07:10Z", "location": "RKSI (이륙)", "actm": "DEP", "content": "TAF ..."},
         ...
     ]
     """
     airports = extract_all_airports_from_text(text)
+    # 공항 필터에서 추출한 Package 2 목록이 있으면 ERA 소스로 사용 (필터 UI와 동일)
+    era_source: List[str] = []
+    if package_airports and "package2" in package_airports:
+        era_source = list(package_airports["package2"])
+    else:
+        era_source = airports.get("era", [])
     # OFP 내 WEATHER BRIEFING TAF (API 실패 시 폴백용)
     ofp_taf = _extract_weather_briefing_taf(text)
 
@@ -1445,7 +1482,7 @@ def build_airport_weather_table(text: str) -> List[Dict[str, str]]:
         if code and code not in seen_collect:
             all_icao.append(code)
             seen_collect.add(code)
-    for code in airports.get("edto_enroute", []) + airports.get("era", []):
+    for code in airports.get("edto_enroute", []) + era_source:
         if code and code not in seen_collect:
             all_icao.append(code)
             seen_collect.add(code)
@@ -1469,7 +1506,9 @@ def build_airport_weather_table(text: str) -> List[Dict[str, str]]:
             summary = _summarize_taf_from_api(taf_item, icao)
             raw = _taf_raw(taf_item)
         else:
-            summary = _summarize_taf_line(ofp_fallback) if ofp_fallback else f"{icao}: TAF 없음"
+            # AWC(aviationweather.gov)는 일부 공항(중국 내륙 등) TAF를 제공하지 않음
+            no_taf_msg = f"{icao}: TAF 없음 (AWC 미제공)"
+            summary = _summarize_taf_line(ofp_fallback) if ofp_fallback else no_taf_msg
             raw = ofp_fallback or ""
             taf_item = None
 
@@ -1609,8 +1648,8 @@ def build_airport_weather_table(text: str) -> List[Dict[str, str]]:
             "category": r["category"],
         })
 
-    # ERA (EDTO에 없는 공항만)
-    for era_apt in airports.get("era", []):
+    # ERA (EDTO에 없는 공항만, 소스: package_airports['package2'] 또는 extract ERA)
+    for era_apt in era_source:
         if era_apt in seen_edto:
             continue
         seen_edto.add(era_apt)
@@ -2036,13 +2075,17 @@ def extract_refile_fuel_summaries(text: str) -> List[Dict[str, Any]]:
             hdr = lines[i + 1].strip()
             if i + 2 < n:
                 second = lines[i + 2].strip()
-                # 두 줄로 나뉜 경우 "- RKSI TO LTFM" / "NEGEM TO LOWW" → 중간에 " - " 보강
-                sep = " - " if second and not second.startswith("-") else " "
+                # 두 줄로 나뉜 경우 "LOWW TO ZBAA" / "- UPSUR TO RKSI" 또는 "- RKSI TO LTFM" / "NEGEM TO LOWW"
+                if second and not second.startswith("-"):
+                    sep = " - "
+                else:
+                    sep = " "
                 hdr_merged = hdr + sep + second
             else:
                 hdr_merged = hdr
+            # 형식1: "- RKSI TO LTFM - NEGEM TO LOWW" 또는 "LOWW TO ZBAA - UPSUR TO RKSI" (앞에 - 없어도 됨)
             m_hdr = re.search(
-                r"-\s*([A-Z]{4})\s+TO\s+([A-Z]{4})\s*-\s*([0-9A-Z]{3,8})\s+TO\s+([A-Z]{4})",
+                r"(?:-\s*)?([A-Z]{4})\s+TO\s+([A-Z]{4})\s*-\s*([0-9A-Z]{3,8})\s+TO\s+([A-Z]{4})",
                 hdr_merged,
                 re.IGNORECASE,
             )
@@ -2051,6 +2094,26 @@ def extract_refile_fuel_summaries(text: str) -> List[Dict[str, Any]]:
                 refile_dest = m_hdr.group(2).upper()
                 ref_point = m_hdr.group(3).upper()
                 orig_dest = m_hdr.group(4).upper()
+            else:
+                # 형식2: "- UPSUR TO RKSI" 만 있는 경우 (한 구간만 표기)
+                m_single = re.search(
+                    r"-\s*([0-9A-Z]{3,8})\s+TO\s+([A-Z]{4})",
+                    hdr_merged,
+                    re.IGNORECASE,
+                )
+                if m_single:
+                    refile_dep = m_single.group(1).upper()
+                    refile_dest = m_single.group(2).upper()
+                else:
+                    # 형식3: "LOWW TO ZBAA" 만 (앞에 - 없음)
+                    m_two = re.search(
+                        r"([A-Z]{4})\s+TO\s+([A-Z]{4})",
+                        hdr_merged,
+                        re.IGNORECASE,
+                    )
+                    if m_two:
+                        refile_dep = m_two.group(1).upper()
+                        refile_dest = m_two.group(2).upper()
 
         # 블록 끝: 다음 REFILE 헤더 또는 "CFP PLAN" 전까지
         j = i + 1
@@ -2065,6 +2128,20 @@ def extract_refile_fuel_summaries(text: str) -> List[Dict[str, Any]]:
             j += 1
 
         block = "\n".join(block_lines)
+
+        # RQRD/VFR/FINAL RES는 "Refile Point TO 원래 목적지" 구간 값만 사용 (예: UPSUR TO RKSI)
+        # 블록에 "LOWW TO ZBAA"와 "UPSUR TO RKSI" 두 구간이 있으면 첫 번째 구간의 RQRD가 아닌
+        # Refile 구간( ref_point → orig_dest )의 RQRD/VFR를 써야 함.
+        # 줄 시작의 구간 헤더( "- UPSUR TO RKSI" 또는 "UPSUR TO RKSI 0133 ..." )부터 사용 (헤더 한 줄 "LOWW TO ZBAA - UPSUR TO RKSI" 내 매칭 제외)
+        segment_block = block
+        if ref_point and orig_dest:
+            seg_at_line_start = re.compile(
+                r"\n\s*-?\s*" + re.escape(ref_point) + r"\s+TO\s+" + re.escape(orig_dest) + r"(?:\s+\d+|\s*$)",
+                re.IGNORECASE,
+            )
+            m_seg = seg_at_line_start.search(block)
+            if m_seg:
+                segment_block = block[m_seg.start():].lstrip()
 
         def _fuel_val(raw: Optional[str]) -> Optional[int]:
             if not raw:
@@ -2083,31 +2160,38 @@ def extract_refile_fuel_summaries(text: str) -> List[Dict[str, Any]]:
         if m_planned:
             planned_rf_lbs = _fuel_val(m_planned.group(1))
         if not planned_rf_lbs:
-            m_planned = re.search(r"REFILE\s+POINT\s*(\d{3,6})", block, re.IGNORECASE)
+            m_planned = re.search(r"REFILE\s+POINT\s*(\d{3,6})", block, re.IGNORECASE | re.DOTALL)
+            if m_planned:
+                planned_rf_lbs = _fuel_val(m_planned.group(1))
+        if not planned_rf_lbs:
+            # POINT 다음 줄에만 숫자 있는 경우 (예: "PLANNED R/F AT REFILE POINT" \n "00298")
+            m_planned = re.search(
+                r"REFILE\s+POINT\s*\n\s*(\d{3,6})", block, re.IGNORECASE
+            )
             if m_planned:
                 planned_rf_lbs = _fuel_val(m_planned.group(1))
 
-        # IFR required: RQRD 0368 03.37
+        # IFR required: RQRD 0228 02.28 (Refile 구간만: segment_block 사용)
         required_ifr_lbs: Optional[int] = None
         required_ifr_time = ""
-        m_rqrd = re.search(r"RQRD\s+(\d+)\s+(\d{2}\.\d{2})", block, re.IGNORECASE)
+        m_rqrd = re.search(r"R[QO]RD\s+(\d+)\s+(\d{1,2}\.\d{2})", segment_block, re.IGNORECASE)
         if m_rqrd:
             required_ifr_lbs = _fuel_val(m_rqrd.group(1))
             t = m_rqrd.group(2)
             required_ifr_time = f"{t[:2]}:{t[3:]}"
 
-        # VFR 0301 03.06
+        # VFR 0188 02.10 (Refile 구간만: segment_block 사용)
         vfr_base_lbs: Optional[int] = None
         vfr_required_time = ""
-        m_vfr = re.search(r"\bVFR\s+(\d+)\s+(\d{2}\.\d{2})", block, re.IGNORECASE)
+        m_vfr = re.search(r"\bVFR\s+(\d+)\s+(\d{2}\.\d{2})", segment_block, re.IGNORECASE)
         if m_vfr:
             vfr_base_lbs = _fuel_val(m_vfr.group(1))
             t = m_vfr.group(2)
             vfr_required_time = f"{t[:2]}:{t[3:]}"
 
-        # FINAL RES 0050 00.30 (첫 번째 항목만 사용)
+        # FINAL RES (Refile 구간만: segment_block 사용)
         final_res_lbs: Optional[int] = None
-        m_final = re.search(r"FINAL\s+RES\s+(\d+)\s+\d{2}\.\d{2}", block, re.IGNORECASE)
+        m_final = re.search(r"FINAL\s+RES\s+(\d+)\s+\d{2}\.\d{2}", segment_block, re.IGNORECASE)
         if m_final:
             final_res_lbs = _fuel_val(m_final.group(1))
 

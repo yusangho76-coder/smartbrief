@@ -1,10 +1,10 @@
 #!/bin/bash
-# Smart NOTAM 앱 종료 스크립트
+# SmartBrief 앱 종료 스크립트
 
 PORT=5005
-PID_FILE=".smartnotam.pid"
+PID_FILE=".smartbrief.pid"
 
-echo "🛑 Smart NOTAM 앱을 종료합니다..."
+echo "🛑 SmartBrief 앱을 종료합니다..."
 
 # 방법 1: PID 파일에서 프로세스 종료
 if [ -f "$PID_FILE" ]; then
@@ -71,6 +71,6 @@ if [ -n "$PYTHON_PIDS" ]; then
     exit 0
 fi
 
-echo "❌ 실행 중인 Smart NOTAM 앱을 찾을 수 없습니다."
+echo "❌ 실행 중인 SmartBrief 앱을 찾을 수 없습니다."
 echo "💡 앱이 이미 종료되었거나 다른 포트에서 실행 중일 수 있습니다."
 

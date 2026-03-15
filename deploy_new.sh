@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# SmartNOTAM 새로운 Cloud Run 배포 스크립트
+# SmartBrief 새로운 Cloud Run 배포 스크립트
 
 # 설정 - 여기에 새로운 프로젝트 정보를 입력하세요
 PROJECT_ID="smartnotam-475810"  # 새로운 프로젝트 ID
@@ -26,7 +26,7 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-echo "🚀 SmartNOTAM 새로운 Cloud Run 배포 시작..."
+echo "🚀 SmartBrief 새로운 Cloud Run 배포 시작..."
 
 # 1. 프로젝트 설정 확인
 print_step "프로젝트 설정 확인"
@@ -51,7 +51,7 @@ print_step "Artifact Registry 저장소 생성 중..."
 gcloud artifacts repositories create $REPOSITORY_NAME \
     --repository-format=docker \
     --location=$REGION \
-    --description="SmartNOTAM Docker repository" \
+    --description="SmartBrief Docker repository" \
     2>/dev/null || echo "✅ 저장소가 이미 존재합니다."
 
 # 4. Docker 이미지 빌드 및 푸시

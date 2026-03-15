@@ -1,6 +1,6 @@
-# SmartNOTAMgemini_GCR에서 가져온 항공 용어 설정
+# SmartBrief 항공 용어 설정
 """
-항공 용어 설정 파일 (SmartNOTAMgemini_GCR에서 통합)
+항공 용어 설정 파일 (SmartBrief 통합)
 """
 
 """

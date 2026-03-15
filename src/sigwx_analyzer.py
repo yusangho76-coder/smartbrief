@@ -1126,14 +1126,41 @@ def fetch_and_match_sigmet_for_route(flight_data: List[Dict],
         API 응답에 따라 다음 두 가지 형태 처리:
           - [{"lat":x,"lon":y}, ...]           → 단일 폴리곤
           - [[{"lat":x,"lon":y}, ...], ...]    → 복수 폴리곤
+        null/유효하지 않은 점 제거, 최소 3점 이상인 폴리곤만 반환.
         """
+        def _valid_point(c: Dict) -> Optional[Dict]:
+            lat = c.get("lat") if isinstance(c, dict) else None
+            lon = c.get("lon") if isinstance(c, dict) else None
+            if lat is None or lon is None:
+                return None
+            try:
+                lat_f, lon_f = float(lat), float(lon)
+                if -90 <= lat_f <= 90 and -180 <= lon_f <= 180:
+                    return {"lat": lat_f, "lon": lon_f}
+            except (TypeError, ValueError):
+                pass
+            return None
+
         if not raw_coords:
             return []
         if isinstance(raw_coords[0], dict):
-            return [raw_coords]          # 단일 폴리곤
-        if isinstance(raw_coords[0], list):
-            return raw_coords            # 복수 폴리곤
-        return []
+            polygons = [raw_coords]
+        elif isinstance(raw_coords[0], list):
+            polygons = raw_coords
+        else:
+            return []
+        out = []
+        for poly in polygons:
+            if not poly:
+                continue
+            valid = []
+            for c in poly:
+                p = _valid_point(c) if isinstance(c, dict) else None
+                if p is not None:
+                    valid.append(p)
+            if len(valid) >= 3:
+                out.append(valid)
+        return out
 
     results: List[Dict] = []
 
@@ -1272,8 +1299,8 @@ def fetch_and_match_sigmet_for_route(flight_data: List[Dict],
             "label":      label,
             "base_fl":    str(base_fl_val) if base_fl_val else "SFC",
             "top_fl":     str(top_fl_val)  if top_fl_val  else "—",
-            "valid_from": vfrom_dt.strftime("%H:%MZ"),
-            "valid_to":   vto_dt.strftime("%H:%MZ"),
+            "valid_from": vfrom_dt.strftime("%m/%d %H:%MZ"),
+            "valid_to":   vto_dt.strftime("%m/%d %H:%MZ"),
             "affect_type": affect_type,
             "first_wp":   first_wp["name"],
             "last_wp":    last_wp["name"],
@@ -1283,10 +1310,95 @@ def fetch_and_match_sigmet_for_route(flight_data: List[Dict],
             "raw_text":   raw_text,
         })
 
+    # 2차: 매칭 0건이면 "현재 발효 중" SIGMET만 경로·고도·공간으로 재검사 (시간 필터 생략)
+    now_utc = datetime.now(timezone.utc)
+    if len(results) == 0 and len(sigmets) > 0:
+        for sigmet in sigmets:
+            raw_coords = sigmet.get("coords", [])
+            polygons = _normalize_coords(raw_coords)
+            if not polygons:
+                continue
+            vfrom_ts = sigmet.get("validTimeFrom", 0) or 0
+            vto_ts   = sigmet.get("validTimeTo",   0) or 0
+            vfrom_dt = datetime.fromtimestamp(vfrom_ts, tz=timezone.utc)
+            vto_dt   = datetime.fromtimestamp(vto_ts,   tz=timezone.utc)
+            if not (vfrom_dt <= now_utc <= vto_dt):
+                continue
+            base_ft = int(sigmet.get("base") or 0)
+            top_ft  = int(sigmet.get("top")  or 99000)
+            hazard_raw = (sigmet.get("hazard") or "").upper().strip()
+            qualifier  = (sigmet.get("qualifier") or "").upper().strip()
+            fir_name   = sigmet.get("firName") or sigmet.get("isigmetId") or "Unknown"
+            raw_text   = (sigmet.get("rawAirSigmet") or sigmet.get("rawText") or "")[:300]
+            hazard_ko  = _HAZARD_KO.get(hazard_raw, hazard_raw)
+            qual_ko    = _QUALIFIER_KO.get(qualifier, qualifier)
+            base_fl_val = base_ft // 100
+            top_fl_val  = top_ft  // 100
+            affected = []
+            for wp_idx, wp in enumerate(wps):
+                wp_fl = wp["fl"]
+                is_dep_arr = wp_idx in _dep_idx or wp_idx in _arr_idx
+                alt_buffer = 10000 if is_dep_arr else 5000
+                if wp_fl is not None:
+                    wp_ft = wp_fl * 100
+                    if is_dep_arr:
+                        if top_ft < 3000:
+                            continue
+                    else:
+                        if not (base_ft - alt_buffer <= wp_ft <= top_ft + alt_buffer):
+                            continue
+                else:
+                    if top_ft < 20000:
+                        continue
+                is_inside = any(point_in_polygon((wp["lat"], wp["lon"]), poly) for poly in polygons)
+                is_near   = (not is_inside and
+                             any(point_near_polygon((wp["lat"], wp["lon"]), poly, threshold_km=200)
+                                 for poly in polygons))
+                if is_inside or is_near:
+                    affected.append({
+                        "name": wp["name"], "time_str": wp["time_str"], "actm": wp["actm"],
+                        "inside": is_inside, "dep_arr": is_dep_arr,
+                    })
+            if not affected:
+                continue
+            cruise_inside = any(w["inside"] and not w.get("dep_arr") for w in affected)
+            cruise_near   = any(not w["inside"] and not w.get("dep_arr") for w in affected)
+            affect_type = "경로 내부" if cruise_inside else ("경로 근처(200km)" if cruise_near else "출발/도착 구간")
+            affect_type = affect_type + " (현재 발효 중)"
+            first_wp, last_wp = affected[0], affected[-1]
+            def _fmt_t(s: str) -> str:
+                if s and len(s) >= 4 and s[:4].isdigit():
+                    return f"{s[:2]}:{s[2:4]}Z"
+                return s or "—"
+            time_display = (f"{_fmt_t(first_wp['time_str'])} ~ {_fmt_t(last_wp['time_str'])}"
+                            if first_wp["name"] != last_wp["name"] else _fmt_t(first_wp["time_str"]))
+            actm_display = (f"{first_wp['actm']} ~ {last_wp['actm']}"
+                            if first_wp["name"] != last_wp["name"] else first_wp["actm"])
+            is_gairmet = sigmet.get("_gairmet", False)
+            tag = "[G-AIRMET]" if is_gairmet else "[SIGMET]"
+            label = " ".join([tag, qual_ko, hazard_ko]) if qual_ko else " ".join([tag, hazard_ko])
+            results.append({
+                "fir": fir_name, "hazard_en": hazard_raw, "hazard_ko": hazard_ko,
+                "qualifier": qualifier, "qual_ko": qual_ko, "label": label,
+                "base_fl": str(base_fl_val) if base_fl_val else "SFC",
+                "top_fl": str(top_fl_val) if top_fl_val else "—",
+                "valid_from": vfrom_dt.strftime("%m/%d %H:%MZ"),
+                "valid_to": vto_dt.strftime("%m/%d %H:%MZ"),
+                "affect_type": affect_type,
+                "first_wp": first_wp["name"], "last_wp": last_wp["name"],
+                "time_display": time_display, "actm_display": actm_display,
+                "wp_count": len(affected), "raw_text": raw_text,
+            })
+        if results:
+            logger.info(f"SIGMET 2차 매칭(현재 발효 기준): {len(results)}개")
+
     # 중복 제거: (fir + valid_from + valid_to + hazard_en + base_fl + top_fl) 기준
     seen_keys: set = set()
     deduped: List[Dict] = []
     for r in results:
+        if r.get("_info_row") or r.get("_warning_row"):
+            deduped.append(r)
+            continue
         key = (r["fir"], r["valid_from"], r["valid_to"],
                r["hazard_en"], r["base_fl"], r["top_fl"])
         if key not in seen_keys:
@@ -1294,8 +1406,26 @@ def fetch_and_match_sigmet_for_route(flight_data: List[Dict],
             deduped.append(r)
     results = deduped
 
-    # 시간 순 정렬
-    results.sort(key=lambda r: r["valid_from"])
+    # 시간 순 정렬 (_info_row/_warning_row는 맨 뒤로)
+    def _sort_key(r):
+        if r.get("_info_row") or r.get("_warning_row"):
+            return (1, "")
+        return (0, r.get("valid_from", ""))
+    results.sort(key=_sort_key)
+
+    # 매칭 0건이고 SIGMET은 있었을 때: 안내 행 추가
+    if len(sigmets) > 0 and not any(r.get("_warning_row") for r in results):
+        has_any_match = any(not r.get("_info_row") and not r.get("_warning_row") for r in results)
+        if not has_any_match:
+            results.append({
+                "_info_row": True,
+                "info_msg": (
+                    f"발효 중인 SIGMET/G-AIRMET {len(sigmets)}건 중 "
+                    f"경로·고도(±FL50)·시간(±8h)·공간(200km) 조건에 맞는 항목이 없습니다. "
+                    f"(고도 제외 {_filter_stats['alt_fail']}건, 시간 제외 {_filter_stats['time_fail']}건, "
+                    f"공간 제외 {_filter_stats['spatial_fail']}건)"
+                ),
+            })
 
     logger.info(
         f"SIGMET 경로 영향 구간(중복제거 후): {len(results)}개 "

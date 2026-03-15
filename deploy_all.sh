@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ===== Smart NOTAM 전체 배포 스크립트 =====
+# ===== SmartBrief 전체 배포 스크립트 =====
 # Streamlit 앱과 Flask 앱을 순차적으로 배포합니다.
 
 set -e  # 오류 발생 시 스크립트 중단
@@ -16,7 +16,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${CYAN}=== Smart NOTAM 전체 배포 시작 ===${NC}\n"
+echo -e "${CYAN}=== SmartBrief 전체 배포 시작 ===${NC}\n"
 
 # 1단계: Streamlit 앱 배포
 echo -e "${CYAN}[1/2] Streamlit 앱 (ATS FPL Validator) 배포${NC}"
@@ -32,7 +32,7 @@ else
 fi
 
 # 2단계: Flask 앱 배포
-echo -e "${CYAN}[2/2] Flask 앱 (Smart NOTAM) 배포${NC}"
+echo -e "${CYAN}[2/2] Flask 앱 (SmartBrief) 배포${NC}"
 if [ -f "deploy/deploy_mac yhj.sh" ]; then
     cd deploy
     chmod +x "deploy_mac yhj.sh"

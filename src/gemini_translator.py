@@ -1,7 +1,7 @@
 """
 Gemini-based NOTAM Translator
 Gemini API를 사용한 고급 NOTAM 번역 및 요약 모듈
-참조: SmartNOTAMgemini_GCR/notam_translator.py, summary.py
+참조: SmartBrief/notam_translator.py, summary.py
 """
 
 import os

@@ -19,7 +19,7 @@ PROJECT_ID="smartbrief-490302"
 REGION="asia-northeast3"               # 서울 권장
 REPO="smartnotam"                       # Artifact Registry 저장소명
 SERVICE="smartnotam3"                    # Cloud Run 서비스명
-API_KEY="AIzaSyBZDC5DNk_ywkN2SMdRgWnc_eNjOfGogfk"
+API_KEY="AIzaSyBUFGz4nGrrazNQuGy6XWXe0O7yLCGUwbs"
 GRANTEE="user:stellakim6741@gmail.com"
 
 # 색상 정의
@@ -253,7 +253,13 @@ if [ "$FINAL_CHECK" != "$PROJECT_ID" ]; then
     exit 1
 fi
 echo -e "${GREEN}✅ 프로젝트 최종 확인: $PROJECT_ID${NC}"
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com $GCLOUD_PROJECT_FLAG
+# Run/빌드 + Gemini + Maps JavaScript + Places(기존/신규) + Geocoding + API Keys
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com \
+  generativelanguage.googleapis.com \
+  maps-backend.googleapis.com geocoding-backend.googleapis.com apikeys.googleapis.com \
+  places.googleapis.com places-backend.googleapis.com \
+  $GCLOUD_PROJECT_FLAG
+echo -e "${GREEN}✅ API 활성화 완료 (Run, Artifact Registry, Cloud Build, Gemini, Maps, Geocoding, API Keys, Places)${NC}"
 
 echo -e "\n${CYAN}[3/9] Artifact Registry 리포지토리 생성(존재 시 무시)${NC}"
 verify_project
@@ -288,13 +294,21 @@ else
   echo -e "${YELLOW}⚠️  프로젝트 번호 조회 실패. 빌드 단계에서 권한 오류가 나면 IAM에서 프로젝트의 Cloud Build 서비스 계정(프로젝트번호@cloudbuild.gserviceaccount.com)에 Cloud Run 관리자/서비스 계정 사용자/Storage 관리자 역할을 수동 부여하세요.${NC}"
 fi
 
+# 스크립트 실행 사용자(GRANTEE)에게 Cloud Build·Storage 권한 부여 (gcloud builds submit 시 PERMISSION_DENIED 방지)
+echo -e "\n${CYAN}[3.6/9] 실행 사용자(GRANTEE) Cloud Build·Storage 권한 부여${NC}"
+verify_project
+for ROLE in roles/cloudbuild.builds.editor roles/storage.objectAdmin; do
+  gcloud projects add-iam-policy-binding $PROJECT_ID --member="$GRANTEE" --role="$ROLE" $GCLOUD_PROJECT_FLAG --quiet 2>/dev/null || true
+done
+echo -e "${GREEN}✅ GRANTEE 권한 부여 시도 완료 (이미 있으면 무시)${NC}"
+
 echo -e "\n${CYAN}[4/9] 이미지 빌드 & 푸시 (Cloud Build)${NC}"
 verify_project
 
 # 프로젝트 루트에서 실행 (Dockerfile, requirements.txt 등이 있는 곳)
 cd "$PROJECT_ROOT"
 
-# cloudbuild.yaml 파일이 있으면 임시로 이름 변경 (하드코딩된 프로젝트 방지)
+# cloudbuild.yaml temporarily renamed to avoid hardcoded project in trigger
 CLOUDBUILD_BACKUP=""
 if [ -f "cloudbuild.yaml" ]; then
     CLOUDBUILD_BACKUP="cloudbuild.yaml.backup.$$"
@@ -360,8 +374,8 @@ else
     echo -e "${YELLOW}   ATSplanvalidation/deploy_streamlit.sh를 먼저 실행하세요.${NC}"
 fi
 
-# 환경 변수 설정
-ENV_VARS="GEMINI_API_KEY=$API_KEY"
+# 환경 변수 설정 (GEMINI_API_KEY, GOOGLE_MAPS_API_KEY, GOOGLE_API_KEY)
+ENV_VARS="GEMINI_API_KEY=$API_KEY,GOOGLE_MAPS_API_KEY=$API_KEY,GOOGLE_API_KEY=$API_KEY"
 if [ -n "$STREAMLIT_URL" ]; then
     ENV_VARS="$ENV_VARS,STREAMLIT_URL=$STREAMLIT_URL"
 fi

@@ -99,7 +99,7 @@ if [ "$FINAL_CHECK" != "$PROJECT_ID" ]; then
 fi
 
 if ! gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com \
-  maps.googleapis.com geocoding.googleapis.com apikeys.googleapis.com \
+  maps-backend.googleapis.com geocoding-backend.googleapis.com apikeys.googleapis.com \
   generativelanguage.googleapis.com \
   --project="$PROJECT_ID"; then
   echo -e "${RED}❌ API 활성화 실패. 아래를 확인하세요.${NC}"
@@ -186,6 +186,14 @@ else
   echo -e "${YELLOW}⚠️  프로젝트 번호 조회 실패. 빌드 단계에서 권한 오류가 나면 IAM에서 해당 Cloud Build 서비스 계정에 Cloud Run 관리자/서비스 계정 사용자/Storage 관리자 역할을 수동 부여하세요.${NC}"
 fi
 
+# 실행 사용자(GRANTEE)에게 Cloud Build·Storage 권한 부여 (gcloud builds submit 시 PERMISSION_DENIED 방지)
+echo -e "\n${CYAN}[4.5/9] 실행 사용자(GRANTEE) Cloud Build·Storage 권한 부여${NC}"
+verify_project
+for ROLE in roles/cloudbuild.builds.editor roles/storage.objectAdmin; do
+  gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="$GRANTEE" --role="$ROLE" --project="$PROJECT_ID" --quiet 2>/dev/null || true
+done
+echo -e "${GREEN}✅ GRANTEE 권한 부여 시도 완료 (이미 있으면 무시)${NC}"
+
 # [5/9] 이미지 빌드 & 푸시
 echo -e "\n${CYAN}[5/9] 이미지 빌드 & 푸시 (Cloud Build)${NC}"
 verify_project
@@ -231,7 +239,7 @@ STREAMLIT_SERVICE="ats-fpl-validator"
 if gcloud run services describe $STREAMLIT_SERVICE --region=$REGION --format="value(status.url)" --project="$PROJECT_ID" >/dev/null 2>&1; then
   STREAMLIT_URL=$(gcloud run services describe $STREAMLIT_SERVICE --region=$REGION --format="value(status.url)" --project="$PROJECT_ID")
 fi
-ENV_VARS="GEMINI_API_KEY=$API_KEY"
+ENV_VARS="GEMINI_API_KEY=$API_KEY,GOOGLE_API_KEY=$API_KEY"
 [ -n "$GOOGLE_MAPS_API_KEY" ] && ENV_VARS="$ENV_VARS,GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY"
 [ -n "$STREAMLIT_URL" ] && ENV_VARS="$ENV_VARS,STREAMLIT_URL=$STREAMLIT_URL"
 gcloud run services update $SERVICE --region $REGION --update-env-vars "$ENV_VARS" --project="$PROJECT_ID"

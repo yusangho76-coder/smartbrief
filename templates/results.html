@@ -997,8 +997,8 @@
                                         {% endif %}">
                                         {{ row.label }}
                                     </td>
-                                    <td class="text-end fw-bold">{{ row.fuel|e }}</td>
-                                    <td class="text-end fw-bold">{{ row.time|e }}</td>
+                                    <td class="text-end fw-bold{% if 'RAMP OUT' in _label_str or 'FOD' in _label_str %} text-primary{% endif %}">{{ row.fuel|e }}</td>
+                                    <td class="text-end fw-bold{% if 'RAMP OUT' in _label_str or 'FOD' in _label_str %} text-primary{% endif %}">{{ row.time|e }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

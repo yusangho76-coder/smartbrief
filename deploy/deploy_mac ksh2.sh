@@ -14,13 +14,13 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # 프로젝트 루트로 이동
 cd "$PROJECT_ROOT"
 
-# --- 설정값 -- 정동혁
-PROJECT_ID="smartbrief-490307"
+# --- 설정값 ---김성현2 rokafpilot32@gmail.com
+PROJECT_ID="smartbrief-490309"
 REGION="asia-northeast3"               # 서울 권장
 REPO="smartnotam"                       # Artifact Registry 저장소명
 SERVICE="smartnotam3"                    # Cloud Run 서비스명
-API_KEY="AIzaSyDAjgUbXwVUmeWA1XcRCLNE56df2PXhnH8"
-GRANTEE="user:dhjung77127@gmail.com"
+API_KEY="AIzaSyAgCVzUmUlYBPUqvsslAxFOHMuUhLeM9a4"
+GRANTEE="user:rokafpilot32@gmail.com"
 
 # 색상 정의
 CYAN='\033[0;36m'
@@ -253,7 +253,13 @@ if [ "$FINAL_CHECK" != "$PROJECT_ID" ]; then
     exit 1
 fi
 echo -e "${GREEN}✅ 프로젝트 최종 확인: $PROJECT_ID${NC}"
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com $GCLOUD_PROJECT_FLAG
+# Run/빌드 + Gemini + Maps JavaScript + Places(기존/신규) + Geocoding + API Keys
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com \
+  generativelanguage.googleapis.com \
+  maps-backend.googleapis.com geocoding-backend.googleapis.com apikeys.googleapis.com \
+  places.googleapis.com places-backend.googleapis.com \
+  $GCLOUD_PROJECT_FLAG
+echo -e "${GREEN}✅ API 활성화 완료 (Run, Artifact Registry, Cloud Build, Gemini, Maps, Geocoding, API Keys, Places)${NC}"
 
 echo -e "\n${CYAN}[3/9] Artifact Registry 리포지토리 생성(존재 시 무시)${NC}"
 verify_project
@@ -368,8 +374,8 @@ else
     echo -e "${YELLOW}   ATSplanvalidation/deploy_streamlit.sh를 먼저 실행하세요.${NC}"
 fi
 
-# 환경 변수 설정
-ENV_VARS="GEMINI_API_KEY=$API_KEY"
+# 환경 변수 설정 (GEMINI_API_KEY, GOOGLE_MAPS_API_KEY, GOOGLE_API_KEY)
+ENV_VARS="GEMINI_API_KEY=$API_KEY,GOOGLE_MAPS_API_KEY=$API_KEY,GOOGLE_API_KEY=$API_KEY"
 if [ -n "$STREAMLIT_URL" ]; then
     ENV_VARS="$ENV_VARS,STREAMLIT_URL=$STREAMLIT_URL"
 fi

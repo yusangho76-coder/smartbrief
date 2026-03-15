@@ -274,7 +274,7 @@ fi
 echo -e "${GREEN}✅ 프로젝트 최종 확인: $PROJECT_ID${NC}"
 # 배포용 3개 + Maps/Geocoding/API Keys + Generative Language(Gemini)
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com \
-  maps.googleapis.com geocoding.googleapis.com apikeys.googleapis.com \
+  maps-backend.googleapis.com geocoding-backend.googleapis.com apikeys.googleapis.com \
   generativelanguage.googleapis.com \
   $GCLOUD_PROJECT_FLAG
 echo -e "${GREEN}✅ API 활성화 완료 (Run, Artifact Registry, Cloud Build, Maps, Geocoding, API Keys, Gemini)${NC}"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =======================================================================
-# SmartNOTAM / SmartBriefier - GCP 원클릭 부트스트랩 & 배포 스크립트 (macOS/Linux)
+# SmartBrief - GCP 원클릭 부트스트랩 & 배포 스크립트 (macOS/Linux)
 # -----------------------------------------------------------------------
 # 대상:
 #   - Google 계정만 막 만들고
@@ -37,7 +37,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${CYAN}=== SmartNOTAM GCP 부트스트랩 & 배포 ===${NC}"
+echo -e "${CYAN}=== SmartBrief GCP 부트스트랩 & 배포 ===${NC}"
 echo -e "프로젝트 루트: ${GREEN}$PROJECT_ROOT${NC}"
 echo ""
 
@@ -90,8 +90,8 @@ if gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
   echo -e "  ${GREEN}기존 프로젝트를 사용합니다:${NC} $PROJECT_ID"
 else
   echo -e "  ${YELLOW}프로젝트가 없습니다. 새 프로젝트를 생성합니다.${NC}"
-  read -rp "  프로젝트 이름(콘솔에 표시될 이름, 기본: SmartNOTAM): " PROJECT_NAME
-  PROJECT_NAME=${PROJECT_NAME:-SmartNOTAM}
+  read -rp "  프로젝트 이름(콘솔에 표시될 이름, 기본: SmartBrief): " PROJECT_NAME
+  PROJECT_NAME=${PROJECT_NAME:-SmartBrief}
 
   gcloud projects create "$PROJECT_ID" \
     --name="$PROJECT_NAME"
@@ -133,7 +133,7 @@ else
   gcloud artifacts repositories create "$REPO" \
     --repository-format=docker \
     --location="$REGION" \
-    --description="SmartNOTAM Docker images"
+    --description="SmartBrief Docker images"
   echo -e "  ${GREEN}리포지토리 생성 완료:${NC} $REPO ($REGION)"
 fi
 

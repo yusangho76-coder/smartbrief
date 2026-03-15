@@ -14,14 +14,13 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # 프로젝트 루트로 이동
 cd "$PROJECT_ROOT"
 
-# --- 설정값 ---양호중
-# 새 GCR 프로젝트(smartbriefer)에 배포
-PROJECT_ID="smartnotam-476803"
+# --- 설정값 ---김세진
+PROJECT_ID="smartbrief-490302"
 REGION="asia-northeast3"               # 서울 권장
 REPO="smartnotam"                       # Artifact Registry 저장소명
-SERVICE="smartnotam4"                # Cloud Run 서비스명 (새로 생성)
-API_KEY="AIzaSyA7rf9lPi2h_0ff7hg2OpheObhhbRXRkxI"
-GRANTEE="user:yangs9508@gmail.com"
+SERVICE="smartnotam3"                    # Cloud Run 서비스명
+API_KEY="AIzaSyBZDC5DNk_ywkN2SMdRgWnc_eNjOfGogfk"
+GRANTEE="user:stellakim6741@gmail.com"
 
 # 색상 정의
 CYAN='\033[0;36m'
@@ -30,8 +29,9 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# 디버깅: 사용할 프로젝트 ID 확인
+# 이 스크립트는 이 파일에 적힌 설정값만 사용합니다. (다른 sh 파일/gcloud config와 무관)
 echo -e "${CYAN}=== 배포 설정 확인 ===${NC}"
+echo -e "실행 스크립트: ${GREEN}$(basename "$0")${NC}"
 echo -e "프로젝트 ID: ${GREEN}$PROJECT_ID${NC}"
 echo -e "리전: ${GREEN}$REGION${NC}"
 echo -e "저장소: ${GREEN}$REPO${NC}"
@@ -241,7 +241,18 @@ echo -e "${GREEN}✅ 계정 설정 확인: $(gcloud config get-value account 2>/
 echo -e "${GREEN}✅ 자격 증명 확인 완료${NC}"
 
 echo -e "\n${CYAN}[2/9] 필수 API 활성화${NC}"
+# 프로젝트 설정 강제 확인 (API 활성화 전에 반드시 올바른 프로젝트로 설정)
 verify_project
+force_set_project $PROJECT_ID
+export CLOUDSDK_CORE_PROJECT=$PROJECT_ID
+# 최종 프로젝트 확인
+FINAL_CHECK=$(gcloud config get-value project 2>/dev/null)
+if [ "$FINAL_CHECK" != "$PROJECT_ID" ]; then
+    echo -e "${RED}❌ 프로젝트 설정 실패! 현재: $FINAL_CHECK, 목표: $PROJECT_ID${NC}"
+    echo -e "${YELLOW}수동으로 프로젝트를 설정하세요: gcloud config set project $PROJECT_ID${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ 프로젝트 최종 확인: $PROJECT_ID${NC}"
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com $GCLOUD_PROJECT_FLAG
 
 echo -e "\n${CYAN}[3/9] Artifact Registry 리포지토리 생성(존재 시 무시)${NC}"
@@ -257,6 +268,25 @@ else
 fi
 
 gcloud artifacts repositories describe $REPO --location=$REGION $GCLOUD_PROJECT_FLAG > /dev/null
+
+# Cloud Build 서비스 계정에 역할 부여 (처음 배포 시 PERMISSION_DENIED 방지)
+echo -e "\n${CYAN}[3.5/9] Cloud Build 서비스 계정 역할 부여${NC}"
+verify_project
+PROJECT_NUM=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)" $GCLOUD_PROJECT_FLAG 2>/dev/null || true)
+if [ -n "$PROJECT_NUM" ]; then
+  CB_SA="${PROJECT_NUM}@cloudbuild.gserviceaccount.com"
+  COMPUTE_SA="${PROJECT_NUM}-compute@developer.gserviceaccount.com"
+  for ROLE in roles/run.admin roles/iam.serviceAccountUser roles/storage.admin; do
+    gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:${CB_SA}" --role="$ROLE" $GCLOUD_PROJECT_FLAG --quiet 2>/dev/null || true
+  done
+  # Compute Engine 기본 서비스 계정: 버킷 읽기, Artifact Registry 푸시, 로그 기록
+  for ROLE in roles/storage.admin roles/artifactregistry.writer roles/logging.logWriter; do
+    gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:${COMPUTE_SA}" --role="$ROLE" $GCLOUD_PROJECT_FLAG --quiet 2>/dev/null || true
+  done
+  echo -e "${GREEN}✅ Cloud Build 서비스 계정 역할 부여 완료${NC}"
+else
+  echo -e "${YELLOW}⚠️  프로젝트 번호 조회 실패. 빌드 단계에서 권한 오류가 나면 IAM에서 프로젝트의 Cloud Build 서비스 계정(프로젝트번호@cloudbuild.gserviceaccount.com)에 Cloud Run 관리자/서비스 계정 사용자/Storage 관리자 역할을 수동 부여하세요.${NC}"
+fi
 
 echo -e "\n${CYAN}[4/9] 이미지 빌드 & 푸시 (Cloud Build)${NC}"
 verify_project
@@ -343,11 +373,20 @@ gcloud run services update $SERVICE \
 
 echo -e "\n${CYAN}[8/9] 실행 권한 부여(roles/run.invoker)${NC}"
 verify_project
+# 특정 사용자에게 권한 부여
 gcloud run services add-iam-policy-binding $SERVICE \
   --region $REGION \
   --member="$GRANTEE" \
   --role="roles/run.invoker" \
   $GCLOUD_PROJECT_FLAG
+
+# 모든 사용자(비인증 포함)에게 접근 허용 - Forbidden 오류 방지
+echo -e "${YELLOW}공개 접근 권한 부여 (allUsers)...${NC}"
+gcloud run services add-iam-policy-binding $SERVICE \
+  --region $REGION \
+  --member="allUsers" \
+  --role="roles/run.invoker" \
+  $GCLOUD_PROJECT_FLAG 2>/dev/null || echo -e "${YELLOW}⚠️  allUsers 권한 부여 실패 - 조직 정책 제한일 수 있습니다. 아래 수동 해결 방법을 확인하세요.${NC}"
 
 URL=$(gcloud run services describe $SERVICE --region $REGION --format="value(status.url)" $GCLOUD_PROJECT_FLAG)
 

@@ -14,14 +14,17 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # 프로젝트 루트로 이동
 cd "$PROJECT_ROOT"
 
-# --- 설정값 ---양호중
-# 새 GCR 프로젝트(smartbriefer)에 배포
-PROJECT_ID="smartnotam-476803"
+# --- 설정값 ---김지환 (My First Project)
+PROJECT_ID="project-b4d78a5b-877d-4cc9-b41"
 REGION="asia-northeast3"               # 서울 권장
 REPO="smartnotam"                       # Artifact Registry 저장소명
-SERVICE="smartnotam4"                # Cloud Run 서비스명 (새로 생성)
-API_KEY="AIzaSyA7rf9lPi2h_0ff7hg2OpheObhhbRXRkxI"
-GRANTEE="user:yangs9508@gmail.com"
+SERVICE="smartnotam3"                    # Cloud Run 서비스명
+# Gemini: 비워 두면 배포 시 GCP에서 API 키 자동 생성. 수동 사용 시 AI Studio 또는 GCP에서 발급한 키 입력.
+API_KEY=""
+# Google Maps: 비워 두면 배포 시 GCP에서 API 키 자동 생성. 수동 사용 시 여기에 키 입력.
+GOOGLE_MAPS_API_KEY=""
+GRANTEE="user:jangnayam@gmail.com"
+
 
 # 색상 정의
 CYAN='\033[0;36m'
@@ -240,11 +243,89 @@ echo -e "${GREEN}✅ 프로젝트 설정 확인: $PROJECT_ID${NC}"
 echo -e "${GREEN}✅ 계정 설정 확인: $(gcloud config get-value account 2>/dev/null || echo '설정 없음')${NC}"
 echo -e "${GREEN}✅ 자격 증명 확인 완료${NC}"
 
-echo -e "\n${CYAN}[2/9] 필수 API 활성화${NC}"
-verify_project
-gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com $GCLOUD_PROJECT_FLAG
+echo -e "\n${CYAN}[2/9] 권한 확인 (Owner / Editor)${NC}"
+# 현재 계정이 해당 프로젝트에서 Owner 또는 Editor 권한인지 확인
+CURRENT_ACCOUNT_FINAL=$(gcloud config get-value account 2>/dev/null || echo "")
+IAM_ROLES=$(gcloud projects get-iam-policy "$PROJECT_ID" \
+  --flatten="bindings[].members" \
+  --format="table(bindings.role,bindings.members)" 2>/dev/null | \
+  grep "user:${CURRENT_ACCOUNT_FINAL}" || true)
 
-echo -e "\n${CYAN}[3/9] Artifact Registry 리포지토리 생성(존재 시 무시)${NC}"
+if ! echo "$IAM_ROLES" | grep -E "roles/owner|roles/editor" >/dev/null 2>&1; then
+    echo -e "${RED}❌ 이 프로젝트에서 로그인한 계정(${CURRENT_ACCOUNT_FINAL})이 Owner/Editor가 아닙니다.${NC}"
+    echo -e "${YELLOW}   → GCP 콘솔에서 이 계정에 Owner(또는 Editor) 권한을 부여한 뒤, 다시 스크립트를 실행하세요.${NC}"
+    echo -e "${YELLOW}   프로젝트: ${PROJECT_ID}${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ 권한 확인 완료 (Owner/Editor)${NC}"
+
+echo -e "\n${CYAN}[3/9] 필수 API 활성화${NC}"
+# 배포 인프라 3개 + Maps/Geocoding/API Keys + Generative Language(Gemini). 키는 비워 두면 자동 생성.
+verify_project
+force_set_project $PROJECT_ID
+export CLOUDSDK_CORE_PROJECT=$PROJECT_ID
+# 최종 프로젝트 확인
+FINAL_CHECK=$(gcloud config get-value project 2>/dev/null)
+if [ "$FINAL_CHECK" != "$PROJECT_ID" ]; then
+    echo -e "${RED}❌ 프로젝트 설정 실패! 현재: $FINAL_CHECK, 목표: $PROJECT_ID${NC}"
+    echo -e "${YELLOW}수동으로 프로젝트를 설정하세요: gcloud config set project $PROJECT_ID${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ 프로젝트 최종 확인: $PROJECT_ID${NC}"
+# 배포용 3개 + Maps/Geocoding/API Keys + Generative Language(Gemini)
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com \
+  maps.googleapis.com geocoding.googleapis.com apikeys.googleapis.com \
+  generativelanguage.googleapis.com \
+  $GCLOUD_PROJECT_FLAG
+echo -e "${GREEN}✅ API 활성화 완료 (Run, Artifact Registry, Cloud Build, Maps, Geocoding, API Keys, Gemini)${NC}"
+
+# API_KEY(Gemini)가 비어 있으면 GCP에서 API 키 자동 생성
+if [ -z "$API_KEY" ]; then
+  echo -e "${CYAN}Gemini API 키 자동 생성 중...${NC}"
+  GEMINI_KEY_NAME=""
+  if GEMINI_KEY_NAME=$(gcloud beta services api-keys create \
+    --display-name="SmartBrief-Gemini-$(date +%Y%m%d)" \
+    --project="$PROJECT_ID" \
+    --format="value(name)" 2>/dev/null); then
+    sleep 2
+    API_KEY=$(gcloud beta services api-keys get-key-string "$GEMINI_KEY_NAME" --project="$PROJECT_ID" 2>/dev/null || true)
+    if [ -n "$API_KEY" ]; then
+      echo -e "${GREEN}✅ Gemini API 키 자동 생성 완료${NC}"
+    else
+      echo -e "${YELLOW}⚠️  Gemini 키 문자열 조회 실패. GCP 콘솔에서 API 키 생성 후 API_KEY에 넣어 주세요.${NC}"
+    fi
+  else
+    echo -e "${YELLOW}⚠️  Gemini API 키 자동 생성 실패. API_KEY를 수동 설정해 주세요.${NC}"
+  fi
+fi
+
+# GOOGLE_MAPS_API_KEY가 비어 있으면 GCP API 키 자동 생성
+if [ -z "$GOOGLE_MAPS_API_KEY" ]; then
+  echo -e "${CYAN}Google Maps API 키 자동 생성 중...${NC}"
+  MAPS_KEY_NAME=""
+  if MAPS_KEY_NAME=$(gcloud beta services api-keys create \
+    --display-name="SmartBrief-Maps-$(date +%Y%m%d)" \
+    --project="$PROJECT_ID" \
+    --format="value(name)" 2>/dev/null); then
+    sleep 2
+    GOOGLE_MAPS_API_KEY=$(gcloud beta services api-keys get-key-string "$MAPS_KEY_NAME" --project="$PROJECT_ID" 2>/dev/null || true)
+    if [ -n "$GOOGLE_MAPS_API_KEY" ]; then
+      echo -e "${GREEN}✅ Maps API 키 자동 생성 완료${NC}"
+    else
+      echo -e "${YELLOW}⚠️  키 문자열 조회 실패. 콘솔에서 API 키 생성 후 GOOGLE_MAPS_API_KEY에 넣어 주세요.${NC}"
+    fi
+  else
+    echo -e "${YELLOW}⚠️  Maps API 키 자동 생성 실패(gcloud beta 또는 권한). GOOGLE_MAPS_API_KEY를 수동 설정하면 지도 사용 가능.${NC}"
+  fi
+fi
+
+# Gemini 키는 필수: 자동 생성 실패 시 배포 중단
+if [ -z "$API_KEY" ]; then
+  echo -e "${RED}❌ Gemini API 키가 비어 있습니다. 스크립트 상단 API_KEY에 GCP 또는 AI Studio에서 발급한 키를 넣은 뒤 다시 실행하세요.${NC}"
+  exit 1
+fi
+
+echo -e "\n${CYAN}[4/9] Artifact Registry 리포지토리 생성(존재 시 무시)${NC}"
 verify_project
 if gcloud artifacts repositories create $REPO \
     --repository-format=docker \
@@ -330,8 +411,11 @@ else
     echo -e "${YELLOW}   ATSplanvalidation/deploy_streamlit.sh를 먼저 실행하세요.${NC}"
 fi
 
-# 환경 변수 설정
+# 환경 변수 설정 (GEMINI_API_KEY 필수, GOOGLE_MAPS_API_KEY는 지도 페이지 사용 시 설정)
 ENV_VARS="GEMINI_API_KEY=$API_KEY"
+if [ -n "$GOOGLE_MAPS_API_KEY" ]; then
+    ENV_VARS="$ENV_VARS,GOOGLE_MAPS_API_KEY=$GOOGLE_MAPS_API_KEY"
+fi
 if [ -n "$STREAMLIT_URL" ]; then
     ENV_VARS="$ENV_VARS,STREAMLIT_URL=$STREAMLIT_URL"
 fi
@@ -343,11 +427,20 @@ gcloud run services update $SERVICE \
 
 echo -e "\n${CYAN}[8/9] 실행 권한 부여(roles/run.invoker)${NC}"
 verify_project
+# 특정 사용자에게 권한 부여
 gcloud run services add-iam-policy-binding $SERVICE \
   --region $REGION \
   --member="$GRANTEE" \
   --role="roles/run.invoker" \
   $GCLOUD_PROJECT_FLAG
+
+# 모든 사용자(비인증 포함)에게 접근 허용 - Forbidden 오류 방지
+echo -e "${YELLOW}공개 접근 권한 부여 (allUsers)...${NC}"
+gcloud run services add-iam-policy-binding $SERVICE \
+  --region $REGION \
+  --member="allUsers" \
+  --role="roles/run.invoker" \
+  $GCLOUD_PROJECT_FLAG 2>/dev/null || echo -e "${YELLOW}⚠️  allUsers 권한 부여 실패 - 조직 정책 제한일 수 있습니다. 아래 수동 해결 방법을 확인하세요.${NC}"
 
 URL=$(gcloud run services describe $SERVICE --region $REGION --format="value(status.url)" $GCLOUD_PROJECT_FLAG)
 

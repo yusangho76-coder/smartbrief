@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ===== Smart NOTAM - 간편 배포 스크립트 =====
+# ===== SmartBrief - 간편 배포 스크립트 =====
 # 초보자도 쉽게 사용할 수 있는 자동화된 배포 스크립트
 # 
 # 사용법:
@@ -163,7 +163,7 @@ create_project_if_needed() {
         echo -e "${YELLOW}프로젝트가 없습니다. 생성 중...${NC}"
         
         # 프로젝트 생성
-        if gcloud projects create "$PROJECT_ID" --name="Smart NOTAM" 2>/dev/null; then
+        if gcloud projects create "$PROJECT_ID" --name="SmartBrief" 2>/dev/null; then
             echo -e "${GREEN}✅ 프로젝트 생성 완료: $PROJECT_ID${NC}"
         else
             echo -e "${RED}❌ 프로젝트 생성 실패${NC}"
@@ -238,7 +238,7 @@ create_repository() {
         gcloud artifacts repositories create "$REPO" \
             --repository-format=docker \
             --location="$REGION" \
-            --description="Smart NOTAM Docker images" \
+            --description="SmartBrief Docker images" \
             --project="$PROJECT_ID" \
             --quiet
         
@@ -353,7 +353,7 @@ show_summary() {
 main() {
     echo -e "${CYAN}"
     echo "╔════════════════════════════════════════╗"
-    echo "║   Smart NOTAM 간편 배포 스크립트      ║"
+    echo "║   SmartBrief 간편 배포 스크립트      ║"
     echo "╚════════════════════════════════════════╝"
     echo -e "${NC}\n"
     

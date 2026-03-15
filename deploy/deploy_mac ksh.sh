@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ===== Smart NOTAM - GCR/Cloud Run 원클릭 배포 스크립트 (macOS/Linux) =====
+# ===== SmartBrief - GCR/Cloud Run 원클릭 배포 스크립트 (macOS/Linux) =====
 # 요구: gcloud SDK 설치, 브라우저 로그인 가능 환경
 # 이 스크립트는 deploy 폴더에서 실행되며, 프로젝트 루트를 자동으로 찾습니다.
 
@@ -29,8 +29,9 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# 디버깅: 사용할 프로젝트 ID 확인
+# 이 스크립트는 이 파일에 적힌 설정값만 사용합니다. (다른 sh 파일/gcloud config와 무관)
 echo -e "${CYAN}=== 배포 설정 확인 ===${NC}"
+echo -e "실행 스크립트: ${GREEN}$(basename "$0")${NC}"
 echo -e "프로젝트 ID: ${GREEN}$PROJECT_ID${NC}"
 echo -e "리전: ${GREEN}$REGION${NC}"
 echo -e "저장소: ${GREEN}$REPO${NC}"
@@ -259,7 +260,7 @@ verify_project
 if gcloud artifacts repositories create $REPO \
     --repository-format=docker \
     --location=$REGION \
-    --description="Smart NOTAM images" \
+    --description="SmartBrief images" \
     $GCLOUD_PROJECT_FLAG 2>/dev/null; then
     echo "✅ 저장소 생성 완료"
 else
@@ -267,6 +268,25 @@ else
 fi
 
 gcloud artifacts repositories describe $REPO --location=$REGION $GCLOUD_PROJECT_FLAG > /dev/null
+
+# Cloud Build 서비스 계정에 역할 부여 (처음 배포 시 PERMISSION_DENIED 방지)
+echo -e "\n${CYAN}[3.5/9] Cloud Build 서비스 계정 역할 부여${NC}"
+verify_project
+PROJECT_NUM=$(gcloud projects describe $PROJECT_ID --format="value(projectNumber)" $GCLOUD_PROJECT_FLAG 2>/dev/null || true)
+if [ -n "$PROJECT_NUM" ]; then
+  CB_SA="${PROJECT_NUM}@cloudbuild.gserviceaccount.com"
+  COMPUTE_SA="${PROJECT_NUM}-compute@developer.gserviceaccount.com"
+  for ROLE in roles/run.admin roles/iam.serviceAccountUser roles/storage.admin; do
+    gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:${CB_SA}" --role="$ROLE" $GCLOUD_PROJECT_FLAG --quiet 2>/dev/null || true
+  done
+  # Compute Engine 기본 서비스 계정: 버킷 읽기, Artifact Registry 푸시, 로그 기록
+  for ROLE in roles/storage.admin roles/artifactregistry.writer roles/logging.logWriter; do
+    gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:${COMPUTE_SA}" --role="$ROLE" $GCLOUD_PROJECT_FLAG --quiet 2>/dev/null || true
+  done
+  echo -e "${GREEN}✅ Cloud Build 서비스 계정 역할 부여 완료${NC}"
+else
+  echo -e "${YELLOW}⚠️  프로젝트 번호 조회 실패. 빌드 단계에서 권한 오류가 나면 IAM에서 프로젝트의 Cloud Build 서비스 계정(프로젝트번호@cloudbuild.gserviceaccount.com)에 Cloud Run 관리자/서비스 계정 사용자/Storage 관리자 역할을 수동 부여하세요.${NC}"
+fi
 
 echo -e "\n${CYAN}[4/9] 이미지 빌드 & 푸시 (Cloud Build)${NC}"
 verify_project

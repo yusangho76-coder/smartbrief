@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# ===== Smart NOTAM - GCR/Cloud Run 원클릭 배포 스크립트 (macOS/Linux) =====
+# ===== SmartBrief - GCR/Cloud Run 원클릭 배포 스크립트 (macOS/Linux) =====
 # 요구: gcloud SDK 설치, 브라우저 로그인 가능 환경
 # 이 스크립트는 deploy 폴더에서 실행되며, 프로젝트 루트를 자동으로 찾습니다.
 
@@ -259,7 +259,7 @@ verify_project
 if gcloud artifacts repositories create $REPO \
     --repository-format=docker \
     --location=$REGION \
-    --description="Smart NOTAM images" \
+    --description="SmartBrief images" \
     $GCLOUD_PROJECT_FLAG 2>/dev/null; then
     echo "✅ 저장소 생성 완료"
 else

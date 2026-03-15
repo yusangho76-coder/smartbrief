@@ -1,9 +1,10 @@
 # Cloud Build 트리거용: GitHub push 시 이미지 빌드 → Artifact Registry 푸시 → Cloud Run 배포
-# 트리거에서 치환 변수 설정: _REGION(기본 asia-northeast3), _REPO(기본 smartnotam), _SERVICE(기본 smartnotam3)
+# 트리거에서 치환 변수 설정: _REGION, _REPO, _SERVICE (아래 기본값 = smartbrief 경로)
+# 이미지 경로: .../cloud-run-source-deploy/smartbrief/smartnotam3
 substitutions:
   _REGION: asia-northeast3
-  _REPO: smartnotam
-  _SERVICE: smartnotam3
+  _REPO: cloud-run-source-deploy
+  _SERVICE: smartbrief/smartnotam3
 
 options:
   logging: CLOUD_LOGGING_ONLY
